@@ -1,0 +1,5 @@
+Run with
+./test_structure.sh > /dev/null 2>&1 &
+
+Run with 
+./test_newhybrids.sh & 
