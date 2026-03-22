@@ -1,0 +1,53 @@
+# ----
+# Conducting initial PCA on Ebrahimi 03-03 data
+# This data was only 'pures', so keep that in mind.
+# ----
+# 
+# The scripts used assumes currently inside an experiment folder. 
+# 
+# ----
+
+# ---- Default for all experiments 
+BASE_DIR="$(pwd)"            # Base directory (where script is run from)
+SCRIPTS_LOC="$BASE_DIR/../../scripts"
+DATA_LOC="$BASE_DIR/../../data"
+OUTPUT_ROOT="$BASE_DIR/../../experiment_outputs"
+
+# Experiment naming
+EXP_NAME="$(basename "$BASE_DIR")"
+EXP_OUTPUT="output_$EXP_NAME"
+EXP_OUTPUT_PATH="$OUTPUT_ROOT/$EXP_OUTPUT"
+
+# Create output directory (if needed)
+mkdir -p "$EXP_OUTPUT_PATH"
+
+# ---- Experiment
+
+# Missing data in VCF (data_preparation)
+#   Input: data and output locations
+# $SCRIPTS_LOC/data_preparation/missing_vcf.sh \
+#     $DATA_LOC/Ebrahimi_3_3_2026_download/minivcf.vcf.gz \
+#     $EXP_OUTPUT_PATH
+
+# Prune for linkage, generate both and in out versions (data_preparation)
+#   Input: data and output locations
+# $SCRIPTS_LOC/data_preparation/linkage_pruning.sh \
+#     $DATA_LOC/Ebrahimi_3_3_2026_download/minivcf.vcf.gz \
+#     $EXP_OUTPUT_PATH
+
+# Run PCA (pruned and unpruned) (data_analysis)
+#   Inputs: pca_name, data and output locations
+$SCRIPTS_LOC/data_analysis/pca_vcf_extracted.sh \
+    "PCA_unpruned" \
+    $DATA_LOC/Ebrahimi_3_3_2026_download/minivcf.vcf.gz \
+    $EXP_OUTPUT_PATH/linkage.prune.in \
+    $EXP_OUTPUT_PATH
+
+# $SCRIPTS_LOC/data_analysis/pca_vcf_extracted.sh \
+#     "PCA_pruned" \
+#     $DATA_LOC/Ebrahimi_3_3_2026_download/minivcf.vcf.gz \
+#     $EXP_OUTPUT_PATH/linkage.prune.out \
+#     $EXP_OUTPUT_PATH
+
+# Visualize PCAs
+#   (data_visalization)
