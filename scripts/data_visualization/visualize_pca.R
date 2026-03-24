@@ -4,13 +4,11 @@ library(ggplot2)
 library(dplyr)
 library(readr)
 
-# project_root <- "2627_HJH_Thesis/experiments/03_21_26_ebrahimi_data_prep"
+generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, experiment_name) {
+    # read in from files
+    pca <- read_table(pca_eigenvec_file)
+    eigenval <- scan(pca_eigenval_file)
 
-# read in data
-pca <- read_table(file.path("pca_linkage_pruned", "pca_linkage_pruned.eigenvec"), col_names = FALSE)
-eigenval <- scan(file.path("pca_linkage_pruned", "pca_linkage_pruned.eigenval"))
-
-generate_pca_plots <- function(pca, eigenval, experiment_name) {
     # ---- Clean PCA data
     # remove nuisance column
     pca <- pca[,-1]
@@ -25,7 +23,6 @@ generate_pca_plots <- function(pca, eigenval, experiment_name) {
     # Visualize the amount of variance explained by each PC 
     a <- ggplot(pve, aes(PC, pve)) + geom_bar(stat = "identity") + ylab("Percentage variance explained") + theme_light() + theme(text = element_text(size = 20))
     a
-    ggsave(paste0("variance_per_PC_",experiment_name,".png"), plot = a)
 
     # ---- PCA scatter plot
     b <- ggplot(pca, aes(PC1, PC2)) + geom_point(size = 3)
@@ -35,7 +32,22 @@ generate_pca_plots <- function(pca, eigenval, experiment_name) {
     b <- b + ylab(paste0("PC2 (", signif(pve$pve[2], 3), "%)"))
     b
 
-    ggsave(paste0("pca_",experiment_name,".png"), plot = b)
+    ggsave(
+        filename = file.path(out_dir, paste0(experiment_name, "_variance_per_pca.png")),
+        plot = a
+    )
+
+    ggsave(
+        filename = file.path(out_dir, paste0(experiment_name, "_pca.png")),
+        plot = b
+    )
 }
 
-generate_pca_plots(pca, eigenval, "linkage_pruned")
+# ---- CLI entry point
+args <- commandArgs(trailingOnly = TRUE)
+
+if (length(args) != 4) {
+    stop("Usage: script.R <eigenvec> <eigenval> <experiment_name> <out_dir>")
+}
+
+generate_pca_plots(args[1], args[2], args[3], args[4])

@@ -1,9 +1,22 @@
-# Save experiment directory
-EXPER_PWD=$PWD
+# ----
+# Generate missing VCF report for a provided VCF and output location.
+#
+# Inputs
+#   - #1: Full file location to VCF location (in data)
+#   - #2: Full file location to output (in experiments_output)
+# 
+# Assumptions
+#   - Run within experiment folder
+#   - Will create an output folder 
 
-cd ../../data/Ebrahimi_3_3_2026_download
+# Get inputs
+VCF_LOC=$1
+EXP_OUTPUT_LOC=$2
 
-VCF=minivcf.vcf.gz
+# Run missing report analysis
+plink --vcf $VCF_LOC --double-id --allow-extra-chr \
+--missing --out $EXP_OUTPUT_LOC/missing_log
 
-plink --vcf $VCF --double-id --allow-extra-chr \
---missing --out $EXPER_PWD/missing_report
+# Make output directory, move into output dir 
+mkdir -p "$EXP_OUTPUT_LOC/missing_log"
+mv "$EXP_OUTPUT_LOC/missing_log."* "$EXP_OUTPUT_LOC/missing_log"
