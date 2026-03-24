@@ -16,3 +16,7 @@ EXP_OUTPUT_LOC=$2
 # Run missing report analysis
 plink --vcf $VCF_LOC --double-id --allow-extra-chr \
 --missing --out $EXP_OUTPUT_LOC/missing_log
+
+# Make output directory, move into output dir 
+mkdir -p "$EXP_OUTPUT_LOC/missing_log"
+mv "$EXP_OUTPUT_LOC/missing_log."* "$EXP_OUTPUT_LOC/missing_log"

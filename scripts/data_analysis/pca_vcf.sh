@@ -1,6 +1,6 @@
 # ----
 # Computes PCA for an input VCF file into output location; 
-# Extracts only the calls identified in specified "EXTRACT_CALLS" file.
+# DOES NOT EXTRACT any changes --> pca_vcf_extact.sh
 # This was added for the LD pruned versus non-pruned versions.
 # 
 # Inputs 
@@ -11,15 +11,13 @@
 # Get inputs
 PCA_NAME=$1
 VCF_LOC=$2
-EXTRACT_CALLS=$3
-EXP_OUTPUT_LOC=$4
+EXP_OUTPUT_LOC=$3
 
 # echo "$PCA_NAME" 
 # echo "$EXP_OUTPUT_LOC/$PCA_NAME"
 
 # Run 
 plink --vcf "$VCF_LOC" --double-id --allow-extra-chr --set-missing-var-ids @:# \
---extract "$EXTRACT_CALLS" \
 --make-bed --pca --out "$EXP_OUTPUT_LOC/$PCA_NAME"
 
 # Make output directory, move into output dir 

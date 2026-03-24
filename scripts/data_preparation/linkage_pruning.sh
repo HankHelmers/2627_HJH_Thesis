@@ -17,3 +17,7 @@ EXP_OUTPUT_LOC=$2
 plink --vcf $VCF_LOC --double-id --allow-extra-chr \
 --set-missing-var-ids @:# \
 --indep-pairwise 50 10 0.1 --out $EXP_OUTPUT_LOC/linkage
+
+# Make output directory, move into output dir 
+mkdir -p "$EXP_OUTPUT_LOC/linkage_pruning"
+mv "$EXP_OUTPUT_LOC/linkage."* "$EXP_OUTPUT_LOC/linkage_pruning"

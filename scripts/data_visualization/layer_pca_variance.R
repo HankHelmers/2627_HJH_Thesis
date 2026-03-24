@@ -1,10 +1,16 @@
+# 
+#
+# Generate a layered variance per PC plots for two PCA values 
+#
+#
+
 .libPaths("~/local/bin/Rlibs")
 
 library(ggplot2)
 library(dplyr)
 library(readr)
 
-generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, experiment_name) {
+generate_layered_pca_plots <- function(pca_eigenvec_file_1, pca_eigenval_file_1, out_dir, experiment_name) {
     # read in from files
     pca <- read_table(pca_eigenvec_file)
     eigenval <- scan(pca_eigenval_file)
