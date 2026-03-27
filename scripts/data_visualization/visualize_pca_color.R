@@ -4,7 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(readr)
 
-generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc, experiment_name) {
+generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc, experiment_name, SPP_FILE_LOC) {
     print(paste0("Creating plot for PCs: ", pc))
     
     # read in from files
@@ -20,6 +20,12 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
 
     print(pca[1])
 
+    spp <- read.delim(SPP_FILE_LOC, header = FALSE)[[1]]
+
+    # Attach the ind and spp
+    pca$spp <- spp
+    pca$spp <- as.factor(pca$spp) # Make sure discrete
+
     # first convert to percentage variance explained
     pve <- data.frame(PC = 1:20, pve = eigenval/sum(eigenval)*100)
 
@@ -34,7 +40,8 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
     # ---- PCA scatter plot
     b <- ggplot(pca, aes(
         x = .data[[pc_to_graph_1]],
-        y = .data[[pc_to_graph_2]])) 
+        y = .data[[pc_to_graph_2]],
+        color=spp)) 
     b <- b + geom_point(size = 3) + coord_equal()
     b <- b + scale_colour_manual(values = c("red", "blue")) 
     b <- b + theme_light() + theme(text=element_text(size = 20))
@@ -60,8 +67,8 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
 # ---- CLI entry point
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 5) {
-    stop("Usage: script.R <eigenvec> <eigenval> <out_dir> <pc> <experiment_name>")
+if (length(args) != 6) {
+    stop("Usage: script.R <eigenvec> <eigenval> <out_dir> <pc> <experiment_name> <SPP_FILE_LOC>")
 }
 
-generate_pca_plots(args[1], args[2], args[3], as.numeric(args[4]), args[5])
+generate_pca_plots(args[1], args[2], args[3], as.numeric(args[4]), args[5], args[6])

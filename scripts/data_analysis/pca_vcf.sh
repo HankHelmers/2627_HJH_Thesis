@@ -24,3 +24,21 @@ plink --vcf "$VCF_LOC" --double-id --allow-extra-chr --set-missing-var-ids @:# \
 mkdir -p "$EXP_OUTPUT_LOC/$PCA_NAME"
 mv "$EXP_OUTPUT_LOC/$PCA_NAME."* "$EXP_OUTPUT_LOC/$PCA_NAME"
 
+
+# Example call from 03_24_26
+
+# # ---- Default for all experiments 
+# BASE_DIR="$(pwd)"            # Base directory (where script is run from)
+# SCRIPTS_LOC="$BASE_DIR/../../scripts"
+# DATA_LOC="$BASE_DIR/../../data"
+# OUTPUT_ROOT="$BASE_DIR/../../experiment_outputs"
+
+# # Experiment naming based on folder
+# EXP_NAME="$(basename "$BASE_DIR")"
+# EXP_OUTPUT="output_$EXP_NAME"
+# EXP_OUTPUT_PATH="$OUTPUT_ROOT/$EXP_OUTPUT"
+
+# $SCRIPTS_LOC/data_analysis/pca_vcf.sh \
+#     "PCA_unpruned" \
+#     $DATA_LOC/$VCF_FILE_LOC \
+#     $EXP_OUTPUT_PATH

@@ -1,3 +1,5 @@
+# DEPRECATED #####################################
+
 #!/bin/bash
 which structure # verify accessible
 
@@ -22,7 +24,7 @@ OUTFILE="${file_location}/experiment_outputs/03_14_26_testing_structure_lepais/s
 
 # -----------------------------
 # create base params for this experiment
-cp "${file_location}/experiments/template_structure_parameters/template_mainparams" mainparams_exp_template
+cp "${file_location}/scripts/template_structure_parameters/template_structure_mainparams" mainparams_exp_template
 
 # Replace placeholders in-place using sed
 # data params
