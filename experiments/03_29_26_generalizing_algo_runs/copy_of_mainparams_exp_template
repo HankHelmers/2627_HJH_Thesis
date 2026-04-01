@@ -1,7 +1,7 @@
-#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/03_24_26_generalizing_algo_runs/../../experiment_outputs/output_03_24_26_generalizing_algo_runs/structure/{OUTPUT_FILE_NAME}
-#define INFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/03_24_26_generalizing_algo_runs/../../data/Ebrahimi_3_3_2026_download/ebrahimi_3_3_clean.recode.strct_in
-#define NUMINDS 66834
-#define NUMLOCI 288
+#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/03_29_26_generalizing_algo_runs/../../experiment_outputs/output_03_29_26_generalizing_algo_runs/structure/{OUTPUT_FILE_NAME}
+#define INFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/03_29_26_generalizing_algo_runs/../../data/Ebrahimi_3_3_2026_download/test_clean.recode.strct_in
+#define NUMINDS 178
+#define NUMLOCI 133670
 #define LABEL 1
 #define POPDATA 0 
 #define POPFLAG 0 

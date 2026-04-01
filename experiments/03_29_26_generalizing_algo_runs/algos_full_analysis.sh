@@ -21,13 +21,13 @@ mkdir -p "$EXP_OUTPUT_PATH"
 
 # ----------------------------- INPUTS
 # Full data path to str data file
-DATA_FILE_LOC=$DATA_LOC/Ebrahimi_3_3_2026_download/ebrahimi_3_3_clean.recode.strct_in
+DATA_FILE_LOC=$DATA_LOC/Ebrahimi_3_3_2026_download/test_clean.recode.strct_in
 MAIN_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_structure_mainparams.txt"
 EXTRA_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_extraparams"
 
 # Experimental inputs 
-NUMINDS=66834       # wc -l ebrahimi_3_3.bim
-NUMLOCI=288
+NUMINDS=178       # wc -l ebrahimi_3_3.bim
+NUMLOCI=133670
 LABEL=1
 MISSING=-9
 
