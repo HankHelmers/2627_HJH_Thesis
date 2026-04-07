@@ -9,7 +9,9 @@
 #define PHENOTYPE 0 
 #define MARKERNAMES 0 
 #define MAPDISTANCES 0 
-#define ONEROWPERIND 0 
+
+#define ONEROWPERIND 1
+
 #define PHASEINFO 0 
 #define PHASED 0 
 #define RECESSIVEALLELES 0 
@@ -19,7 +21,6 @@
 #define MAXPOPS 2
 #define BURNIN {BURNIN}
 #define NUMREPS {RUNLENGTH}
-
 
 #define NOADMIX 0
 #define LINKAGE 0

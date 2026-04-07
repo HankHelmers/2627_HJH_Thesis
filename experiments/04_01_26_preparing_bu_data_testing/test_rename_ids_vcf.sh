@@ -1,5 +1,9 @@
+# Purpose: (VCF) Rename the individual names within a VCF file using bcftools.
+#
+#          It works by creating a mapping text between the old names and the new
+#          names enabling swapping back and forth if needed. 
 
-
+# INPUTS
 FILE_LOC="minivcf.vcf/minivcf.vcf"
 OUTPUT_LOC="$(pwd)/Ebrahimi_3_3_2026_prepared"
 FILE_NAME="ebrahimi_3_3"

@@ -23,12 +23,21 @@ FILE_NAME="final_structure"
 # # 3. Index
 # bcftools index clean.vcf.gz
 
-plink --vcf minivcf.vcf/minivcf.vcf \
+plink --vcf final_subset.vcf.gz \
     --const-fid 1 \
     --allow-extra-chr \
     --set-missing-var-ids @:# \
     --recode structure \
     --out test
+
+# Remove the top two lines of LOCI names not needed (& of the wrong format)
+# Note: All elements in col 2 are removed in the 'cut' command, so if you add the loci back
+#       you need to be sure to not remove the col 2 from the loci rows (rows 1 & 2) 
+sed '1,2d' "test.recode.strct_in" > "test_no_loci_id.recode.strct_in"
+
+# Remove the population column (column 2) as we won't be using that prior
+cut -d' ' -f1,3- test_no_loci_id.recode.strct_in > test_no_pop.str
+
 
 # Testing
 # plink --vcf minivcf.vcf.gz \
@@ -38,8 +47,6 @@ plink --vcf minivcf.vcf/minivcf.vcf \
 #   --recode vcf \
 #   --out test
 
-# Remove the top two lines of LOCI names not needed (& of the wrong format)
-# sed '1,2d' "test.recode.strct_in" > "test_clean.recode.strct_in"
 
 # plink --vcf "renamed_ind.vcf" \
 #   --double-id \
