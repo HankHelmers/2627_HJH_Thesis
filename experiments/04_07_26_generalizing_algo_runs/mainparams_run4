@@ -1,4 +1,4 @@
-#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../experiment_outputs/output_04_07_26_generalizing_algo_runs/structure/{OUTPUT_FILE_NAME}
+#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../experiment_outputs/output_04_07_26_generalizing_algo_runs/structure/run4
 #define INFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../data/Ebrahimi_3_3_2026_prepared/subsampled_pure_jc_ja.str.str
 #define NUMINDS 50
 #define NUMLOCI 100

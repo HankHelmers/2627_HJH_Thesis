@@ -1,5 +1,5 @@
-#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/03_29_26_generalizing_algo_runs/../../experiment_outputs/output_03_29_26_generalizing_algo_runs/structure/run1
-#define INFILE ../03_28_26_preparing_bu_data/test_no_pop.str
+#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../experiment_outputs/output_04_07_26_generalizing_algo_runs/structure/run1
+#define INFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../data/Ebrahimi_3_3_2026_prepared/subsampled_pure_jc_ja.str.str
 #define NUMINDS 50
 #define NUMLOCI 100
 #define LABEL 1

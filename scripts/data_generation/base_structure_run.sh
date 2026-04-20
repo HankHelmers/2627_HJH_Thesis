@@ -62,14 +62,17 @@ sed -i "s/{RUNLENGTH}/${RUNLENGTH}/g" copy_of_mainparams_exp_template
 sed -i "s|{INFILE}|${INFILE}|g" copy_of_mainparams_exp_template
 sed -i "s|{OUTFILE}|${OUTFILE}|g" copy_of_mainparams_exp_template
 
-i=1
-# copy mainparams for each run 
-cp copy_of_mainparams_exp_template "mainparams_run${i}"
+for i in $(seq 1 "$RUNREPEATS"); do    
+    # copy mainparams for each run 
+    cp copy_of_mainparams_exp_template "mainparams_run${i}"
+    
+    # replace outfile with dynamic name
+    sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "mainparams_run${i}"
 
-# replace outfile with dynamic name
-sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "mainparams_run${i}"
+    structure -m "mainparams_run${i}" -e extraparams
+done 
 
-structure -m "mainparams_run${i}" -e extraparams
+
 
 
 # Make output directory, move into output dir 

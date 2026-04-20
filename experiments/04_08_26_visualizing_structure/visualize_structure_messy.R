@@ -9,8 +9,13 @@ library(dplyr)
 library(purrr)
 library(tidyverse)
 
+structure_results_folder <- "experiment_outputs/output_04_07_26_generalizing_algo_runs/structure"
+original_structure_data_file <- ""
+out_dir <- "experiment_outputs/output_04_07_26_generalizing_algo_runs/"
+
 # example use: https://www.royfrancis.com/pophelper/reference/readQ.html             
-sfiles_real <- list.files("STRUCTURE_projects_GUI/aim2_lepais/vaha_primmer_test/Results", full.names=TRUE) 
+sfiles_real <- list.files(structure_results_folder, full.names=TRUE) 
+
 # list files in current direct
 # the below functions need the full path name so full.names = TRUE
 
@@ -32,9 +37,8 @@ slist_collapsed <- map(sfiles_real, function(run) {
 })
 
 
-
 # read in individal tags
-structure_input <- read.table("example/3_STRUCTURE_HostExpansion_dryad.srt",
+structure_input <- read.table(original_structure_data_file,
                               sep=" ", quote="", stringsAsFactors=FALSE)
 ind_ids <- structure_input[[1]]  # vector of individual IDs
 n_inds <- length(ind_ids)
