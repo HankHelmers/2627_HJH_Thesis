@@ -1,5 +1,0 @@
-This script documents how I created a test population of 10 individuals from the original Ebrahimi March 2026 data as a part of the initial experimental setup phase. 
-
-1. Subset 10 individuals genotypes into a new data folder
-2. Randomly go in and change some haplotypes
-3. Run the preparation script to change genotype vcf to structure and nh

@@ -6,7 +6,9 @@
 # INPUTS
 VCF_FILE_LOC=$1
 OUTPUT_LOC=$2
-FILE_NAME=$3
+OUTPUT_VCF_FILE=$3
+
+echo $OUTPUT_VCF_FILE
 
 # Save old VCF individual names into text
 bcftools query -l $VCF_FILE_LOC > old_ids.txt
@@ -15,7 +17,7 @@ bcftools query -l $VCF_FILE_LOC > old_ids.txt
 nl -w1 old_ids.txt | awk '{print "IND"$1}' > new_ids.txt
 
 # Rename individuals 
-bcftools reheader -s new_ids.txt $VCF_FILE_LOC > "$OUTPUT_LOC/$FILE_NAME.vcf.gz"
+bcftools reheader -s new_ids.txt $VCF_FILE_LOC > "$OUTPUT_VCF_FILE"
 
 # Create a mapping file with old name IND#
 nl old_ids.txt | awk '{print $2, "IND"$1}' > "$OUTPUT_LOC/mapping.txt"

@@ -6,7 +6,7 @@
 
 INPUT_VCF_FILE=$1
 PREPARED_OUTPUT_PATH=$2
-FINAL_STRUCTURE_FILE_NAME=$3
+FINAL_STRUCTURE_FILE=$3
 
 #       Plink --vcf to --structure
 #       --const-fid 1 = Give all individuals a constant famild id (fid)
@@ -24,7 +24,7 @@ plink --vcf $INPUT_VCF_FILE \
 sed '1,2d' "intermediate.recode.strct_in" > "intermediate_no_loci_id.recode.strct_in"
 
 # Remove the population column (column 2) as we won't be using that prior
-cut -d' ' -f1,3- "intermediate_no_loci_id.recode.strct_in" > "$PREPARED_OUTPUT_PATH/$FINAL_STRUCTURE_FILE_NAME.str"
+cut -d' ' -f1,3- "intermediate_no_loci_id.recode.strct_in" > "$FINAL_STRUCTURE_FILE"
 
 # Remove intermediates 
 rm intermediate*

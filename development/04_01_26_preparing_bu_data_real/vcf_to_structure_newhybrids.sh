@@ -69,7 +69,7 @@ python3 "$SCRIPTS_LOC/data_preparation/vcf_to_newhybrids.py" \
 
 # Newhybrids format for subset of data
 python3 "$SCRIPTS_LOC/data_preparation/vcf_to_newhybrids.py" \
-    -i "$PREPARED_OUTPUT_PATH/subsampled_pure_jc_ja.vcf.gz" \
+    -i "$PREPARED_OUTPUT_PATH/subsampled_$FINAL_STRUCTURE_FILE_NAME.vcf.gz" \
     -o "$PREPARED_OUTPUT_PATH/subsampled_$FINAL_STRUCTURE_FILE_NAME.nh"
 
 

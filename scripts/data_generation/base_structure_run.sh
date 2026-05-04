@@ -72,9 +72,6 @@ for i in $(seq 1 "$RUNREPEATS"); do
     structure -m "mainparams_run${i}" -e extraparams
 done 
 
-
-
-
-# Make output directory, move into output dir 
-# mkdir -p "$EXP_OUTPUT_LOC/$PCA_NAME"
-# mv "$EXP_OUTPUT_LOC/$PCA_NAME."* "$EXP_OUTPUT_LOC/$PCA_NAME"
+mkdir -p "str_parameters"
+mv *params* str_parameters
+mv seed.txt str_parameters

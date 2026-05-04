@@ -14,27 +14,28 @@
 # INPUTS
 RAW_VCF_INPUT=$1
 IND_MAPPING_FILE=$2
-NUM_INDS=$3
+IND_SAMPLED_FILE=$3
 NUM_LOCI=$4
-OUTPUT_FILE_NAME=$5
+OUTPUT_FILE=$5
 OUTPUT_PATH=$6
 
-# Subset to top 50 individuals
-head -n $NUM_INDS $IND_MAPPING_FILE | awk '{print $1}' > "$OUTPUT_PATH/subsampled_inds.txt"          # Generates the text with IDs to retain
+echo $IND_SAMPLED_FILE
+echo $NUM_LOCI
+echo $OUTPUT_PATH
 
 # Subset NUM_LOCI random snips
 bcftools view -H  $RAW_VCF_INPUT | shuf -n $NUM_LOCI | cut -f1,2 > "$OUTPUT_PATH/subsampled_snps.txt"
 
 # Generate subset from samples.txt and snps.txt
 bcftools view \
-    -S "$OUTPUT_PATH/subsampled_inds.txt"  \
+    -S "$IND_SAMPLED_FILE"  \
     -T "$OUTPUT_PATH/subsampled_snps.txt" \
     $RAW_VCF_INPUT \
-    -Oz -o "$OUTPUT_PATH/$OUTPUT_FILE_NAME.vcf.gz"
+    -Oz -o "$OUTPUT_FILE"
     # -Oz: output, (z-compressed, v-plain text) 
 
 # Count of samples
-bcftools query -l "$OUTPUT_PATH/$OUTPUT_FILE_NAME.vcf.gz" | wc -l
+bcftools query -l "$OUTPUT_FILE" | wc -l
 
 # Count number of snps
-bcftools view -H "$OUTPUT_PATH/$OUTPUT_FILE_NAME.vcf.gz" | wc -l
+bcftools view -H "$OUTPUT_FILE" | wc -l
