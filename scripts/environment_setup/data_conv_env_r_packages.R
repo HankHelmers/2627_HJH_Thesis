@@ -7,21 +7,12 @@ message("Checking R environment...")
 # Ensure CRAN repo is set
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
-# ------------------------------------------------------------
-# Packages already provided by conda (DO NOT reinstall here):
-# - tidyverse
-# - data.table
-# - adegenet
-# - vcfr
-# - pegas
-# - r-irkernel
-# - bcftools (system tool, not R)
-# ------------------------------------------------------------
 
-# install pophelper package from GitHub
-remotes::install_github('royfrancis/pophelper')
-
-
+# library(remotes)
+# library(devtools)
+# devtools::install_github("thierrygosselin/radiator")
+# library(radiator)
+install.packages("genepop")
 
 # ------------------------------------------------------------
 # Print library path (sanity check)

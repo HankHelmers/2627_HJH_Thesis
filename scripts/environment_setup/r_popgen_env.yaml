@@ -26,6 +26,7 @@ dependencies:
   - python
   - cyvcf2
   - pyvcf
+  - pysam
 
   # utilities
   - pandas

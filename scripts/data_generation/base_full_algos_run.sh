@@ -21,23 +21,23 @@ mkdir -p "$EXP_OUTPUT_PATH"
 
 # ----------------------------- INPUTS
 # STRUCTURE
-STR_DATA_FILE_LOC="$DATA_LOC/Ebrahimi_3_3_2026_prepared/subsampled_pure_jc_ja.str.str"
+STR_DATA_FILE_LOC="$DATA_LOC/(INSERT)"
 MAIN_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_structure_mainparams.txt"
 EXTRA_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_extraparams"
 
 # NEWHYBRIDS
-NH_DATA_FILE_LOC="$DATA_LOC/Ebrahimi_3_3_2026_prepared/subsampled_pure_jc_ja.nh"
+NH_DATA_FILE_LOC="$DATA_LOC/(INSERT)"
 GENOTYPE_LOC="$SCRIPTS_LOC/data_generation/genotype_cat_f1"
 
 # Experimental inputs 
-NUMINDS=50       # wc -l ebrahimi_3_3.bim
-NUMLOCI=100
+NUMINDS=(INSERT)       # wc -l ebrahimi_3_3.bim
+NUMLOCI=(INSERT)
 LABEL=1
 MISSING=-9
 
-BURNIN=5000
-RUNLENGTH=1000
-RUNREPEATS=5
+BURNIN=(INSERT)
+RUNLENGTH=(INSERT)
+RUNREPEATS=(INSERT)
 
 # echo "NUMINDS input: $NUMINDS"
 # echo "BURNIN input: $BURNIN"

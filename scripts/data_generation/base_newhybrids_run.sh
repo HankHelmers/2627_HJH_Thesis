@@ -28,8 +28,9 @@ NUMREPS=$6  # run length
 RUNREPEATS=$7
 
 # Create output folder
-mkdir -p "$EXP_OUTPUT_FILE/newhybrids"
-NH_OUTPUT_FOLDER="$EXP_OUTPUT_FILE/newhybrids"
+date_name=$(date +%Y%m%d_%H%M%S)
+mkdir -p "$EXP_OUTPUT_FILE/newhybrids_$date_name"
+NH_OUTPUT_FOLDER="$EXP_OUTPUT_FILE/newhybrids_$date_name"
 
 for i in $(seq 1 "$RUNREPEATS"); do  
     newhybrids -d ${DATA_FILE_LOC} -c ${GENOTYPE_LOC} --burn-in ${BURNIN} --num-sweeps ${NUMREPS} --no-gui > NewHybridsLog.txt

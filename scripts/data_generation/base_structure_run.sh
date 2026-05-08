@@ -36,8 +36,9 @@ RUNREPEATS=${12}
 
 # ----------------------------- File management
 # Make output directory for structure outputs
-mkdir -p "$EXP_OUTPUT_LOC/structure"
-OUTFILE="$EXP_OUTPUT_LOC/structure/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
+date_name=$(date +%Y%m%d_%H%M%S)
+mkdir -p "$EXP_OUTPUT_LOC/structure_$date_name"
+OUTFILE="$EXP_OUTPUT_LOC/structure_$date_name/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
 INFILE=$DATA_LOC 
 
 # create base params for this experiment
