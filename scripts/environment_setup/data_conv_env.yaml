@@ -1,0 +1,19 @@
+name: data_conv_env
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # R core
+  - r-base
+  - r-remotes  # Needed to install 'radiator' for conversion
+  - r-devtools # Needed to install 'radiator' for conversion
+  - r-arrow    # Needed to install 'radiator' for conversion
+
+  # tidyverse ecosystem
+  - r-tidyverse
+  - r-data.table
+
+  # popgen R packages
+  - r-adegenet
+  - r-vcfr

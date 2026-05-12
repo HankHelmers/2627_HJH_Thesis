@@ -1,0 +1,28 @@
+PLINK v1.9.0-b.7.11 64-bit (19 Aug 2025)
+Options in effect:
+  --allow-extra-chr
+  --const-fid 1
+  --out test
+  --recode structure
+  --set-missing-var-ids @:#
+  --vcf final_subset.vcf.gz
+
+Hostname: gauss
+Working directory: /work/williarj/williarj/2627_HJH_Thesis/experiments/03_28_26_preparing_bu_data
+Start time: Wed Apr  1 11:08:36 2026
+
+Random number seed: 1775056116
+1031474 MB RAM detected; reserving 515737 MB for main workspace.
+--vcf: test-temporary.bed + test-temporary.bim + test-temporary.fam written.
+100 variants loaded from .bim file.
+50 people (0 males, 0 females, 50 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to test.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 50 founders and 0 nonfounders present.
+Calculating allele frequencies... done.
+Total genotyping rate is exactly 1.
+100 variants and 50 people pass filters and QC.
+Note: No phenotypes present.
+--recode structure to test.recode.strct_in ... done.
+
+End time: Wed Apr  1 11:08:36 2026

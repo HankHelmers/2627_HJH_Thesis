@@ -20,28 +20,33 @@ EXP_OUTPUT_PATH="$OUTPUT_ROOT/$EXP_OUTPUT_NAME"
 mkdir -p "$EXP_OUTPUT_PATH"
 
 # ----------------------------- INPUTS
-# Full data path to str data file
-DATA_FILE_LOC=$DATA_LOC/Ebrahimi_3_3_2026_download/ebrahimi_3_3_clean.recode.strct_in
+# STRUCTURE
+STR_DATA_FILE_LOC="$DATA_LOC/Ebrahimi_3_3_2026_subsets/5_200_loci_randomized_subsample_top10.str"
 MAIN_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_structure_mainparams.txt"
 EXTRA_PARAMS_LOC="$SCRIPTS_LOC/data_generation/template_extraparams"
 
+# NEWHYBRIDS
+NH_DATA_FILE_LOC="$DATA_LOC/Ebrahimi_3_3_2026_subsets/5_200_loci_randomized_subsample_top10.nh"
+GENOTYPE_LOC="$SCRIPTS_LOC/data_generation/genotype_cat_f1"
+
 # Experimental inputs 
-NUMINDS=66834       # wc -l ebrahimi_3_3.bim
-NUMLOCI=288
+NUMINDS=10       # wc -l ebrahimi_3_3.bim
+NUMLOCI=200
 LABEL=1
 MISSING=-9
 
-BURNIN=5000
-RUNLENGTH=1000
+BURNIN=50000
+RUNLENGTH=10000
 RUNREPEATS=5
 
-echo "NUMINDS input: $NUMINDS"
-echo "BURNIN input: $BURNIN"
+# echo "NUMINDS input: $NUMINDS"
+# echo "BURNIN input: $BURNIN"
 
 # ---- Experiment
+# STRUCTURE 
 $SCRIPTS_LOC/data_generation/base_structure_run.sh \
     "$EXP_NAME" \
-    "$DATA_FILE_LOC" \
+    "$STR_DATA_FILE_LOC" \
     "$EXP_OUTPUT_PATH" \
     "$MAIN_PARAMS_LOC" \
     "$EXTRA_PARAMS_LOC" \
@@ -51,19 +56,18 @@ $SCRIPTS_LOC/data_generation/base_structure_run.sh \
     "$MISSING" \
     "$BURNIN" \
     "$RUNLENGTH" \
-    "$RUNREPEATS"
+    "$RUNREPEATS" \
+    > /dev/null 2>&1 &
+    # Supress output
 
-
-# INPUTS 
-#   - #1: EXP_NAME, experiment name
-#   - #2: FULL data location to .str (in data)
-#   - #3: FULL experiment output folder (in experiments_output)
-#   - #4: FULL mainparams_template location
-#    
-#   - #5: NUMINDS
-#   - #6: NUMLOCI
-#   - #7: LABEL
-#   - #8: MISSING
-#   - #9: BURNIN
-#   - #10: RUNLENGTH - (Called NUMREPS in file)
-#   - #11: RUNREPEATS - number of runs to repeat
+# NEWHYBRIDS
+# $SCRIPTS_LOC/data_generation/base_newhybrids_run.sh \
+#     "$EXP_NAME" \
+#     "$NH_DATA_FILE_LOC" \
+#     "$EXP_OUTPUT_PATH" \
+#     "$GENOTYPE_LOC" \
+#     "$BURNIN" \
+#     "$RUNLENGTH" \
+#     "$RUNREPEATS"
+#     > /dev/null 2>&1 &
+    # Supress output

@@ -51,3 +51,12 @@ Rscript $SCRIPTS_LOC/data_visualization/visualize_pca_color.R \
     3\
     "Pruned_JA_JC" \
     "${SPP_FILE_LOC}"
+
+# Pruned
+Rscript $SCRIPTS_LOC/data_visualization/visualize_pca_color.R \
+    "${EXP_OUTPUT_PATH}/PCA_pruned/PCA_pruned.eigenvec" \
+    "${EXP_OUTPUT_PATH}/PCA_pruned/PCA_pruned.eigenval" \
+    "${EXP_OUTPUT_PATH}/" \
+    4\
+    "Pruned_JA_JC" \
+    "${SPP_FILE_LOC}"

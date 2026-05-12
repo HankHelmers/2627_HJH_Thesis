@@ -1,0 +1,35 @@
+name: r_popgen_env
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  # R core
+  - r-base
+  - r-remotes # access to github package downloads (pophelper)
+
+  # tidyverse ecosystem
+  - r-tidyverse
+  - r-data.table
+
+  # popgen R packages
+  - r-adegenet
+  - r-vcfr
+  - r-pegas
+
+  # genomics tools (Linux)
+  - plink
+  - bcftools
+  - htslib
+
+  # genomics tools (Python)
+  - python
+  - cyvcf2
+  - pyvcf
+  - pysam
+
+  # utilities
+  - pandas
+  - git
+  - curl
+  - pip

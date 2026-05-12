@@ -36,8 +36,9 @@ RUNREPEATS=${12}
 
 # ----------------------------- File management
 # Make output directory for structure outputs
-mkdir -p "$EXP_OUTPUT_LOC/structure"
-OUTFILE="$EXP_OUTPUT_LOC/structure/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
+date_name=$(date +%Y%m%d_%H%M%S)
+mkdir -p "$EXP_OUTPUT_LOC/structure_$date_name"
+OUTFILE="$EXP_OUTPUT_LOC/structure_$date_name/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
 INFILE=$DATA_LOC 
 
 # create base params for this experiment
@@ -62,16 +63,16 @@ sed -i "s/{RUNLENGTH}/${RUNLENGTH}/g" copy_of_mainparams_exp_template
 sed -i "s|{INFILE}|${INFILE}|g" copy_of_mainparams_exp_template
 sed -i "s|{OUTFILE}|${OUTFILE}|g" copy_of_mainparams_exp_template
 
-i=1
-# copy mainparams for each run 
-cp copy_of_mainparams_exp_template "mainparams_run${i}"
+for i in $(seq 1 "$RUNREPEATS"); do    
+    # copy mainparams for each run 
+    cp copy_of_mainparams_exp_template "mainparams_run${i}"
+    
+    # replace outfile with dynamic name
+    sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "mainparams_run${i}"
 
-# replace outfile with dynamic name
-sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "mainparams_run${i}"
+    structure -m "mainparams_run${i}" -e extraparams
+done 
 
-structure -m "mainparams_run${i}" -e extraparams
-
-
-# Make output directory, move into output dir 
-# mkdir -p "$EXP_OUTPUT_LOC/$PCA_NAME"
-# mv "$EXP_OUTPUT_LOC/$PCA_NAME."* "$EXP_OUTPUT_LOC/$PCA_NAME"
+mkdir -p "str_parameters"
+mv *params* str_parameters
+mv seed.txt str_parameters

@@ -1,8 +1,8 @@
-#define OUTFILE {OUTFILE}
-#define INFILE {INFILE}
-#define NUMINDS {NUMINDS}
-#define NUMLOCI {NUMLOCI}
-#define LABEL {LABEL}
+#define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../experiment_outputs/output_04_07_26_generalizing_algo_runs/structure/run1
+#define INFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/04_07_26_generalizing_algo_runs/../../data/Ebrahimi_3_3_2026_prepared/subsampled_pure_jc_ja.str.str
+#define NUMINDS 50
+#define NUMLOCI 100
+#define LABEL 1
 #define POPDATA 0 
 #define POPFLAG 0 
 #define LOCDATA 0 
@@ -16,11 +16,11 @@
 #define PHASED 0 
 #define RECESSIVEALLELES 0 
 #define EXTRACOLS 0
-#define MISSING {MISSING}
+#define MISSING -9
 #define PLOIDY 2
 #define MAXPOPS 2
-#define BURNIN {BURNIN}
-#define NUMREPS {RUNLENGTH}
+#define BURNIN 5000
+#define NUMREPS 1000
 
 #define NOADMIX 0
 #define LINKAGE 0
