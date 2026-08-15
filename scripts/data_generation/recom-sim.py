@@ -16,7 +16,7 @@ parser.add_argument("--num-offs", type=int, default=100, help="number of offspri
 parser.add_argument("--p1name", type=str, default="POP1", help="name of population 1 (def = POP1)")
 parser.add_argument("--p2name", type=str, default="POP2", help="name of population 2 (def = POP2)")
 parser.add_argument("--exclude", action="store_true", help="exclude parentals from output")
-parser.add_argument("--out", type=str, default="out", help="name of output file (def = out.txt)")
+parser.add_argument("--out", type=str, default="out", help="name of output file (def = out.gen)")
 args = parser.parse_args()
 
 #Parses genepop file collecting loci, samples, and data

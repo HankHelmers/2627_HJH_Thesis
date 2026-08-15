@@ -16,22 +16,21 @@ JC_JA_LABELS_FILE=$4  # This is a text file with the JC/JA label for each indivi
 echo $JC_JA_LABELS_FILE
 
 # Save old VCF individual names into text
-bcftools query -l $VCF_FILE_LOC > old_ids.txt
+bcftools query -l $VCF_FILE_LOC > original_ids.txt
 
-# Create a new list of names based on lengths of the old_ids length
+# Create a new list of names based on lengths of the original_ids length
     # w1 adds a column for the line number in column 1 ($1)
-nl -w1 old_ids.txt | awk '{print "IND"$1}' > numbered_ids.txt
+nl -w1 original_ids.txt | awk '{print "IND"$1}' > numbered_ids.txt
 paste numbered_ids.txt <(awk '{print $1}' "$JC_JA_LABELS_FILE") | \
-awk '{print $1"_"$2}' > combined_ids.txt 
+awk '{print $1"_"$2}' > list_complete_ids.txt 
 
 # Rename individuals 
-bcftools reheader -s combined_ids.txt $VCF_FILE_LOC > "$OUTPUT_VCF_FILE"
+bcftools reheader -s list_complete_ids.txt $VCF_FILE_LOC > "$OUTPUT_VCF_FILE"
 
-# Create a mapping file with old name IND#
-nl old_ids.txt | awk '{print $2, "IND"$1}' > "$OUTPUT_LOC/mapping.txt"
-rm numbered_ids.txt
-rm old_ids.txt
-rm combined_ids.txt
+mv list_complete_ids.txt "$OUTPUT_LOC/list_complete_ids.txt"
+mv original_ids.txt "$OUTPUT_LOC/original_ids.txt"
+rm numbered_ids.txt # remove intermediate
+
 
 # Use the mappings as follows 
 # Ex: nl mapping.txt | awk '{print $2}' > select_INDS.txt

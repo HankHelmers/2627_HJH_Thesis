@@ -22,11 +22,14 @@ source("../../scripts/data_visualization/sort_q_manual.R")
 generate_str_plots <- function(exp_output_folder, str_results_folder, original_structure_input_file, number_of_runs, output_file_name) {
 
     # Collect Runs
-    sfiles <- list.files(str_results_folder, full.names=TRUE) 
-    print(sfiles)
+    sfiles <- list.files(str_results_folder, full.names = TRUE)
+
+    run_files <- sfiles[grepl("_f$", basename(sfiles))] # get only run files
+
+    print(run_files)
 
     # create a qlist of all runs (each a sfile or structure file)
-    slist <- readQ(sfiles,filetype="structure")
+    slist <- readQ(run_files,filetype="structure")
 
     test <- slist[[1]]
 
@@ -36,10 +39,12 @@ generate_str_plots <- function(exp_output_folder, str_results_folder, original_s
     print(summary)
 
     # Prepare for visualization 
-    slist <- sort_q_manual(slist)   # Manually sort in increasing order
+    # slist <- sort_q_manual(slist)   # Manually sort in increasing order
     slist <- as.qlist(slist)        # Add metadata back 
     slist <- alignK(slist)
     str(slist)
+
+    number_of_runs=length(slist)
 
     # Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples
     plotQ(qlist=slist[1:number_of_runs],imgoutput="join", 
@@ -48,6 +53,8 @@ generate_str_plots <- function(exp_output_folder, str_results_folder, original_s
 
 # ---- CLI entry point
 args <- commandArgs(trailingOnly = TRUE)
+
+print(length(args))
 
 if (length(args) != 5) {
     stop("Usage: script.R <exp_output_folder> <str_results_folder> <original_structure_input_file> <number_of_runs> <output_file_name>")

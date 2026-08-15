@@ -1,10 +1,8 @@
-.libPaths("~/local/bin/Rlibs")
-
 library(ggplot2)
 library(dplyr)
 library(readr)
 
-generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc, experiment_name) {
+generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc, color_input, experiment_name) {
     print(paste0("Creating plot for PCs: ", pc))
     
     # read in from files
@@ -35,15 +33,13 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
     b <- ggplot(pca, aes(
         x = .data[[pc_to_graph_1]],
         y = .data[[pc_to_graph_2]])) 
-    b <- b + geom_point(size = 3) + coord_equal()
-    b <- b + scale_colour_manual(values = c("red", "blue")) 
+    b <- b + geom_point(size = 3, color = color_input) + coord_equal()
     b <- b + theme_light() + theme(text=element_text(size = 20))
     b <- b + labs(
         title=experiment_name,
         x = paste0("PC", pc, " (", signif(pve$pve[pc], 3), "%)"),
         y = paste0("PC", pc+1, " (", signif(pve$pve[pc+1], 3), "%)")
         )
-    b <- b + scale_colour_manual(values = c("red", "blue"))
     b
 
     ggsave(
@@ -60,8 +56,8 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
 # ---- CLI entry point
 args <- commandArgs(trailingOnly = TRUE)
 
-if (length(args) != 5) {
-    stop("Usage: script.R <eigenvec> <eigenval> <out_dir> <pc> <experiment_name>")
+if (length(args) != 6) {
+    stop("Usage: script.R <eigenvec> <eigenval> <out_dir> <pc> <color_input> <experiment_name>")
 }
 
-generate_pca_plots(args[1], args[2], args[3], as.numeric(args[4]), args[5])
+generate_pca_plots(args[1], args[2], args[3], as.numeric(args[4]), args[5], args[6])

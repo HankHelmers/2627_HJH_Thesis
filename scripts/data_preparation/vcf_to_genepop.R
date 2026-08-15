@@ -1,3 +1,7 @@
+
+# I wrote this using the given packages. 
+# Someone else wrote another version, if needed @  https://github.com/mscharmann/tools/blob/master/vcf_to_genepop.py
+
 library(vcfR)
 library(adegenet)
 

@@ -42,7 +42,6 @@ OUTFOLDER="$EXP_OUTPUT_LOC/structure_$date_name"
 OUTFILE="$OUTFOLDER/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
 INFILE=$DATA_LOC
 
-LOG_FILE="$OUTFOLDER/STR_log.txt"
 
 # create base params for this experiment
 cp "$MAIN_PARAMS_LOC" "copy_of_mainparams_exp_template"
@@ -68,23 +67,50 @@ sed -i "s|{OUTFILE}|${OUTFILE}|g" copy_of_mainparams_exp_template
 
 # create directory for additional parameters
 mkdir -p "$OUTFOLDER/str_parameters"
+mkdir -p "$OUTFOLDER/logs"
 
-# starting log
-echo "Structure starting..." > $LOG_FILE
+pids=()
 
-for i in $(seq 1 "$RUNREPEATS"); do    
-    echo "Run $i starting..." > $LOG_FILE
-    start=$(date +%Y%m%d_%H%M%S)
+for i in $(seq 1 "$RUNREPEATS"); do
+(
+    LOG_FILE="$OUTFOLDER/logs/STR_log_run_$i.txt"
+    echo "Run $i starting..."  > $LOG_FILE
 
-    # copy mainparams for each run 
-    cp copy_of_mainparams_exp_template "mainparams_run${i}"
-    
-    # replace outfile with dynamic name
-    sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "mainparams_run${i}"
+    start=$(date +%s)
 
-    structure -m "mainparams_run${i}" -e extraparams
-    wait
+    # unique parameter file
+    param_file="mainparams_run${i}"
 
-    echo "$(($(date +%s) - start)) seconds elapsed\r" > $LOG_FILE
-done 
+    cp copy_of_mainparams_exp_template "$param_file"
 
+    # unique output prefix
+    sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "$param_file"
+
+    # run structure
+    structure -m "$param_file" -e extraparams
+
+    # move parameter files
+    mv "$param_file" "$OUTFOLDER/str_parameters/"    
+    mv *params* "$OUTFOLDER/str_parameters"
+    mv seed.txt "$OUTFOLDER/str_parameters"
+    mv extraparams "$OUTFOLDER/str_parameters"
+
+    # seed file may collide if all runs share cwd
+    # if [[ -f seed.txt ]]; then
+    #     mv seed.txt "$OUTFOLDER/str_parameters/seed_run${i}.txt"
+    # fi
+
+    elapsed=$(($(date +%s) - start))
+    echo "Run $i completed in ${elapsed}s" > $LOG_FILE
+
+) &
+
+    pids+=($!)
+done
+
+# wait for all background jobs
+for pid in "${pids[@]}"; do
+    wait "$pid"
+done
+
+echo "All runs complete."

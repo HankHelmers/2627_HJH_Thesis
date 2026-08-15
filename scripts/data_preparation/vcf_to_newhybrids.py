@@ -137,8 +137,10 @@ def vcf2newhybs(inp, out):
     id_df = pd.DataFrame(list(range(1, no_sample + 1)),index=samples_list)
     n_df = pd.DataFrame(['n' for i in range(no_sample)],index=samples_list)
     sample_df = pd.DataFrame(samples_list,index=samples_list)
-    z_df = pd.DataFrame(z_list, index=samples_list)
-    df_out = pd.concat([id_df, n_df, sample_df, z_df, df_selected], axis = 1)
+    # Remove the z prior (known population prior)
+    # z_df = pd.DataFrame(z_list, index=samples_list)
+    # df_out = pd.concat([id_df, n_df, sample_df, z_df, df_selected], axis = 1)
+    df_out = pd.concat([id_df, n_df, sample_df, df_selected], axis = 1)
     df_out.to_csv(out, mode='a', sep = '\t', index=False, header=False)
 
 

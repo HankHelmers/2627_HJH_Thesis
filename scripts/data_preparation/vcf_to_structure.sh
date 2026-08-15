@@ -18,6 +18,8 @@ plink --vcf $INPUT_VCF_FILE \
     --recode structure \
     --out intermediate
 
+    # --chr-set 29 \
+
 # Remove the top two lines of LOCI names not needed (& of the wrong format)
 #       Note: All elements in col 2 are removed in the 'cut' command, so if you add the loci back
 #             you need to be sure to not remove the col 2 from the loci rows (rows 1 & 2) 

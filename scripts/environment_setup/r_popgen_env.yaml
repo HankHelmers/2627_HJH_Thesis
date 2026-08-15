@@ -7,6 +7,8 @@ dependencies:
   # R core
   - r-base
   - r-remotes # access to github package downloads (pophelper)
+  - gxx_linux-64 
+  - gcc_linux-64
 
   # tidyverse ecosystem
   - r-tidyverse
@@ -16,6 +18,8 @@ dependencies:
   - r-adegenet
   - r-vcfr
   - r-pegas
+  - r-arrow
+  - r-dartr
 
   # genomics tools (Linux)
   - plink

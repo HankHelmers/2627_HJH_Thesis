@@ -27,19 +27,32 @@ BURNIN=$5
 NUMREPS=$6  # run length
 RUNREPEATS=$7
 
-# Create output folder
-date_name=$(date +%Y%m%d_%H%M%S)
-mkdir -p "$EXP_OUTPUT_FILE/newhybrids_$date_name"
-NH_OUTPUT_FOLDER="$EXP_OUTPUT_FILE/newhybrids_$date_name"
+# Create output folder using
+date_name=$(date +%Y%m%d)
+INPUT_NH_FILE_NAME=$(basename "$DATA_FILE_LOC" .nh)
+
+NH_OUTPUT_FOLDER="$EXP_OUTPUT_FILE/newhybrids_"$INPUT_NH_FILE_NAME"_$date_name"
+
+mkdir -p "$NH_OUTPUT_FOLDER"
+
 LOG_FILE="$NH_OUTPUT_FOLDER/NH_log.txt"
 
-echo "Starting $RUNREPEATS NH runs..." >> $LOG_FILE
+echo "Starting $RUNREPEATS NH runs at $date_name..." >> $LOG_FILE
+
+# Run NH for each requested repeat
+pids=()
 
 for i in $(seq 1 "$RUNREPEATS"); do
+(
     echo "NH Run $i..." >> $LOG_FILE
 
     start=$(date +%s)
     echo "start: $start" >> $LOG_FILE
+
+    # need to create a seperate directly to run newhybrids from
+    # otherwise the output files would override each other
+    mkdir -p "run$i"
+    cd "run$i"
 
     newhybrids \
         -d ${DATA_FILE_LOC} \
@@ -52,8 +65,16 @@ for i in $(seq 1 "$RUNREPEATS"); do
     echo "$elapsed seconds elapsed" >> "$LOG_FILE"
 
     # move files to own directory in output 
-    mkdir -p "$NH_OUTPUT_FOLDER/run$i"
-    mv aa* EchoedGtypData.txt NewHybridsLog.txt $NH_OUTPUT_FOLDER/run$i
+    cd ..
+    mv run$i $NH_OUTPUT_FOLDER
+) &
+    pids+=($!)
 done 
 
+# wait for all background jobs to find
+for pid in "${pids[@]}"; do
+    wait "$pid"
+done
+
+echo "All runs complete." >> $LOG_FILE
 

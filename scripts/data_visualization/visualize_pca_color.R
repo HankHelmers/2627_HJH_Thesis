@@ -43,14 +43,14 @@ generate_pca_plots <- function(pca_eigenvec_file, pca_eigenval_file, out_dir, pc
         y = .data[[pc_to_graph_2]],
         color=spp)) 
     b <- b + geom_point(size = 3) + coord_equal()
-    b <- b + scale_colour_manual(values = c("red", "blue")) 
+    b <- b + scale_colour_manual(values = c("orange", "blue")) 
     b <- b + theme_light() + theme(text=element_text(size = 20))
     b <- b + labs(
         title=experiment_name,
         x = paste0("PC", pc, " (", signif(pve$pve[pc], 3), "%)"),
         y = paste0("PC", pc+1, " (", signif(pve$pve[pc+1], 3), "%)")
         )
-    b <- b + scale_colour_manual(values = c("red", "blue"))
+    b <- b + scale_colour_manual(values = c("orange", "blue"))
     b
 
     ggsave(
