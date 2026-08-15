@@ -1,2 +1,4 @@
+/archive/
 /data/
 /experiment_outputs/
+*.hist
