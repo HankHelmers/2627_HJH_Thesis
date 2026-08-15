@@ -1,7 +1,0 @@
-Run with
-./algos_full_analysis.sh > /dev/null 2>&1 &
-
-Check progress
-top to see veryone
-q to exit
-top -u helmerhj seeing just mine
