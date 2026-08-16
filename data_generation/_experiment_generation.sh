@@ -43,6 +43,7 @@ if [[ -z "$EXP_ROW" ]]; then
 fi
 
 IFS=',' read -r dataset_id data_folder_name primary_input_file \
+                    JC_IDS_list_file JA_IDS_list_file \
                     owner_sharer num_ids num_loci description <<< "$RAW_DATASET_ROW"
 
 DATASET_LOC="$DATA_LOC/$data_folder_name/$primary_input_file"
@@ -57,7 +58,7 @@ echo "Load Experiment 1 Data -- Generating $num_bootstraps bootstraps..."
 # For i in ${num_bootstraps} 
 #   1. Create folder in experiment folder for bootstrap i
 #        
-#       generate_bootstraps_with(raw_data_file_loc, num_JC_inds, num_JA_inds, num_F1, num_BC1, num_BC2, vary_JC_pop, vary_JA_pop, num_loci, vary_loci)
+#       generate_bootstraps_with(boot_num, EXP_FOLDER, raw_data_file_loc, num_JC_inds, num_JA_inds, num_F1, num_BC1, num_BC2, vary_JC_pop, vary_JA_pop, num_loci, vary_loci)
 #   
 #
 
