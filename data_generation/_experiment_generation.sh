@@ -2,6 +2,8 @@
 # ----------------------------- Configurations
 BASE_DIR="$(pwd)"            
 DATA_LOC="$BASE_DIR/../data"
+RAW_DATA_LOC="$DATA_LOC/raw_input"
+SCRIPT_LOC="$BASE_DIR/../data_generation"
 
 EXP_ID=1
 
@@ -46,20 +48,32 @@ IFS=',' read -r dataset_id data_folder_name primary_input_file \
                     JC_IDS_list_file JA_IDS_list_file \
                     owner_sharer num_ids num_loci description <<< "$RAW_DATASET_ROW"
 
-DATASET_LOC="$DATA_LOC/$data_folder_name/$primary_input_file"
+DATASET_LOC="$RAW_DATA_LOC/$data_folder_name"
+DATASET_FILE="$DATASET_LOC/$primary_input_file"   # Full input path to VCF
+JC_IDS_list_file="$DATASET_LOC/$JC_IDS_list_file" # Full input path to JC IDS list file
+JA_IDS_list_file="$DATASET_LOC/$JA_IDS_list_file" # Full input path to JA IDS list file
 
-echo "Loaded dataset for experiment $EXP_ID --> $DATASET_LOC"
+echo "Loaded dataset file for experiment $EXP_ID --> $DATASET_FILE"
 
 # -----------------
 # 4. Generate bootstraps 
 
 echo "Load Experiment 1 Data -- Generating $num_bootstraps bootstraps..."
 
-# For i in ${num_bootstraps} 
-#   1. Create folder in experiment folder for bootstrap i
-#        
-#       generate_bootstraps_with(boot_num, EXP_FOLDER, raw_data_file_loc, num_JC_inds, num_JA_inds, num_F1, num_BC1, num_BC2, vary_JC_pop, vary_JA_pop, num_loci, vary_loci)
-#   
-#
+./generate_all_bootstraps.sh \
+    $EXP_FOLDER \
+    $DATASET_FILE \
+    $num_bootstraps \
+    $JC_IDS_list_file \
+    $JA_IDS_list_file \
+    $num_JC_inds \
+    $num_JA_inds \
+    $num_F1 \
+    $num_BC1 \
+    $num_BC2 \
+    $vary_JC_pop \
+    $vary_JA_pop \
+    $num_loci \
+    $vary_loci \
 
 echo "Bootstraps complete"

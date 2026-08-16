@@ -31,6 +31,7 @@ do
     # Select random lines from JC/A_sample_names.txt 
     # * -r is VERY important as its sampling with replacement!
     shuf -r -n $NUM_PARENTS_IN_POP $JC_IDS | cut -f1,2 > $BOOTSTRAP_ID_FOLDER/"${i}_list_of_${NUM_PARENTS_IN_POP}_random_JC_ids.txt"
+    
     shuf -r -n $NUM_PARENTS_IN_POP $JA_IDS | cut -f1,2 > $BOOTSTRAP_ID_FOLDER/"${i}_list_of_${NUM_PARENTS_IN_POP}_random_JA_ids.txt"
 
     # Combine together for IDs to subset on
