@@ -1,9 +1,9 @@
 
 # ----------------------------- Configurations
-BASE_DIR="$(pwd)"            
-DATA_LOC="$BASE_DIR/../data"
+BASE_DIR="/work/williarj/williarj/2627_HJH_Thesis"            
+DATA_LOC="$BASE_DIR/data"
 RAW_DATA_LOC="$DATA_LOC/raw_input"
-SCRIPT_LOC="$BASE_DIR/../data_generation"
+SCRIPT_LOC="$BASE_DIR/scripts"
 
 EXP_ID=1
 
@@ -46,7 +46,7 @@ fi
 
 IFS=',' read -r dataset_id data_folder_name primary_input_file \
                     JC_IDS_list_file JA_IDS_list_file \
-                    owner_sharer num_ids num_loci description <<< "$RAW_DATASET_ROW"
+                    owner_sharer num_ids num_total_loci description <<< "$RAW_DATASET_ROW"
 
 DATASET_LOC="$RAW_DATA_LOC/$data_folder_name"
 DATASET_FILE="$DATASET_LOC/$primary_input_file"   # Full input path to VCF
@@ -57,10 +57,8 @@ echo "Loaded dataset file for experiment $EXP_ID --> $DATASET_FILE"
 
 # -----------------
 # 4. Generate bootstraps 
-
-echo "Load Experiment 1 Data -- Generating $num_bootstraps bootstraps..."
-
-./generate_all_bootstraps.sh \
+echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh"
+"$SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh" \
     $EXP_FOLDER \
     $DATASET_FILE \
     $num_bootstraps \
@@ -74,6 +72,4 @@ echo "Load Experiment 1 Data -- Generating $num_bootstraps bootstraps..."
     $vary_JC_pop \
     $vary_JA_pop \
     $num_loci \
-    $vary_loci \
-
-echo "Bootstraps complete"
+    $vary_loci

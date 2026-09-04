@@ -6,9 +6,15 @@
 #
 # Otherwise, one file of listed loci will be used. 
 
+# ----------------------------- Configurations
+BASE_DIR="/work/williarj/williarj/2627_HJH_Thesis/"            
+DATA_LOC="$BASE_DIR/data"
+RAW_DATA_LOC="$DATA_LOC/raw_input"
+SCRIPT_LOC="$BASE_DIR/scripts"
+
 EXP_FOLDER=$1 
 raw_data_file_loc=$2 # INPUT VCF
-num_bootstraps=$3
+num_bootstraps=1 #$3
 
 JC_IDS_list_file=$4  # List of possible JC ids to subset from
 JA_IDS_list_file=$5  # List of possible JA ids to subset from
@@ -22,6 +28,8 @@ vary_JA_pop=${12}
 
 num_loci=${13}
 vary_loci=${14}
+
+echo "Loaded Experiment Data -- Generating $num_bootstraps bootstraps..."
 
 echo "=== Input Argument Check ==="
 echo "EXP_FOLDER:         ${1}"
@@ -60,9 +68,13 @@ do
     mkdir -p "$CURR_GENEPOP_FOLDER"
     mkdir -p "$CURR_STR_FOLDER"
 
-    # Create ind id file
-    curr_inds_ids_file="$CURR_BOOT_FOLDER/ind_ids.txt"
-    > "$curr_inds_ids_file"
+    # Create ID files
+    curr_JC_ids_file="$CURR_BOOT_FOLDER/JC_ids.txt"
+    > "$curr_JC_ids_file"
+    curr_JA_ids_file="$CURR_BOOT_FOLDER/JA_ids.txt"
+    > "$curr_JA_ids_file"
+    curr_loci_id_file="$CURR_BOOT_FOLDER/loci_ids.txt"
+    > "$curr_loci_id_file"
     
     # -------------------------------------
     # Prepare the inds_ids.txt and loc_ids.txt to 
@@ -82,29 +94,51 @@ do
         
         # Select random lines from JC/A_sample_names.txt 
         # * -r is VERY important as its sampling with replacement!
-        shuf -r -n $num_JC_inds $JC_IDS_list_file | cut -f1,2 >> $curr_inds_ids_file
+        shuf -r -n $num_JC_inds $JC_IDS_list_file | cut -f1,2 >> $curr_JC_ids_file
     else 
-        # Select current id list from BOOT1
+        # Copy current id list from BOOT1
         echo "Same JC sample as boot1"
-        cat "$EXP_FOLDER/boot1/ind_ids.txt" >> $curr_inds_ids_file
+        cat "$EXP_FOLDER/boot1/JC_ids.txt" >> $curr_JC_ids_file
     fi
 
+    # Same for specified JA sampling
     if [ "$vary_JA_pop" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
         echo "Re-sample JA"
-        # current_ids_list should be within /bootX folder
-        # current_ids_list = Get random subset of JC_IDS_list_file 
+
+        # Select random lines from JC/A_sample_names.txt 
+        # * -r is VERY important as its sampling with replacement!
+        shuf -r -n $num_JA_inds $JA_IDS_list_file | cut -f1,2 >> $curr_JA_ids_file
+    else 
+        # Copy current id list from BOOT1
+        echo "Same JA sample as boot1"
+        cat "$EXP_FOLDER/boot1/JA_ids.txt" >> $curr_JA_ids_file
     fi
 
     # -------------------------------------
     # 2. Loci
     # Get random subset of num_loci from raw_data_file_loc's list of loci
-
-    # Retrieve raw_data_file_loci's list of loci 
-    # bcftools view -H  $raw_data_file_loc > # VCF
-
     if [ "$vary_loci" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
         echo "Re-sample loci"
-        #   re-sample 
-        #   update current ids list 
+
+        bcftools view -H  $raw_data_file_loc | shuf -n $num_loci \
+                | cut -f1,2 > $curr_loci_id_file
+    else 
+        # Copy current id list from BOOT1
+        echo "Same JA sample as boot1"
+        cat "$EXP_FOLDER/boot1/loci_ids.txt" >> $curr_loci_id_file
     fi
-done
+
+    # -------------------------------------
+    # 3. Generate bootstrapped data (VCF, genepop, STR)
+    echo "Generating bootstrap $boot_num ..."
+    "$SCRIPT_LOC/data_generation/generate_bootstrap_with.sh" \
+        $CURR_BOOT_FOLDER \
+        $boot_num \
+        $num_JC_inds \
+        $num_JA_inds \
+        $num_F1 \
+        $num_BC1 \
+        $num_BC2 \
+        $num_loci \
+        $raw_data_file_loc
+done 

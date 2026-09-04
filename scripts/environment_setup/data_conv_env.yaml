@@ -17,3 +17,7 @@ dependencies:
   # popgen R packages
   - r-adegenet
   - r-vcfr
+
+  # Pinning bioconda directly forces matching curl structures
+  - bioconda::bcftools
+  - curl
