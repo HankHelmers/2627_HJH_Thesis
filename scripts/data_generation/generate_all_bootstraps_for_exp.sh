@@ -14,7 +14,7 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 
 EXP_FOLDER=$1 
 raw_data_file_loc=$2 # INPUT VCF
-num_bootstraps=1 #$3
+num_bootstraps=5 #$3
 
 JC_IDS_list_file=$4  # List of possible JC ids to subset from
 JA_IDS_list_file=$5  # List of possible JA ids to subset from
@@ -46,10 +46,22 @@ echo "vary_JC_pop:        ${11}"
 echo "vary_JA_pop:        ${12}"
 echo "num_loci:           ${13}"
 echo "vary_loci:          ${14}"
+
+# Create experiment log file 
+LOG_FILE="$EXP_FOLDER/log.txt"
+est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
+echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
    
+total_time=0
+
 # FOR i BOOTSTRAP (num_bootstraps)
 for boot_num in $(seq 1 $num_bootstraps)
-do
+do  
+    # For log
+    echo "-------------------------------------" >> $LOG_FILE
+    echo "Starting boot $boot_num generation..." >> $LOG_FILE
+    start=$(date +%s%3N)
+
     # 0. Generate folders with structure
     #  /boot_{i}       - parent folder for this bootstrap
     #       /vcf     - folder of all generated vcfs
@@ -141,4 +153,16 @@ do
         $num_BC2 \
         $num_loci \
         $raw_data_file_loc
+
+    elapsed=$(($(date +%s%3N) - start))
+    minutes=$((elapsed / 60000))
+    seconds=$(((elapsed % 60000) / 1000))
+    total_time=$(($total_time + $elapsed))
+    echo "Run $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
 done 
+
+echo "-----------------------------" >> $LOG_FILE
+echo "Bootstrap generation complete" >> $LOG_FILE
+minutes=$((total_time / 60000))
+seconds=$(((total_time % 60000) / 1000))
+echo "Total generation time took ${minutes} min ${seconds} sec" >> $LOG_FILE

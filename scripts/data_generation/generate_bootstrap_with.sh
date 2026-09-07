@@ -19,6 +19,8 @@ JC_IDS_list_file="$BOOT_FOLDER/JC_ids.txt"  # List of possible JC ids to subset 
 JA_IDS_list_file="$BOOT_FOLDER/JA_ids.txt"  # List of possible JA ids to subset from
 loci_ID_file="$BOOT_FOLDER/loci_ids.txt"
 all_ID_list_file="$BOOT_FOLDER/combined_JC_JA_ids.txt"
+FINAL_VCF="$BOOT_FOLDER/vcf/boot${BOOT_NUM}_combined_JC_JA.vcf.gz"
+FINAL_GENEPOP="$BOOT_FOLDER/genepop/$(basename $FINAL_VCF .vcf.gz).gen"
 num_JC_inds=$3       # Number of JC to sample
 num_JA_inds=$4       # Number of JA to sample
 num_F1=$5
@@ -26,7 +28,6 @@ num_BC1=$6
 num_BC2=$7
 num_loci=$8
 RAW_VCF=$9
-FINAL_VCF="$BOOT_FOLDER/vcf/boot${BOOT_NUM}_combined_JC_JA.vcf.gz"
 
 echo "=== Input Argument Check ==="
 echo "BOOT_FOLDER:        $BOOT_FOLDER"
@@ -90,28 +91,84 @@ bcftools merge \
     $BOOT_FOLDER/vcf/no_duplicates.vcf.gz \
     $BOOT_FOLDER/vcf/duplicates.vcf.gz
 
-# Remove intermediate vcfs
+# Remove intermediate vcfs/txt
 rm $BOOT_FOLDER/vcf/duplicates.vcf.gz
 rm $BOOT_FOLDER/vcf/no_duplicates.vcf.gz
+rm $BOOT_FOLDER/duplicates.txt
+
+# Update final ID list with the indexes and Sort the final ID list according to JC/JA
+bcftools query -l $FINAL_VCF | sort -t '_' -k 2,2 > $all_ID_list_file
+
+# Update the JC/JA ID list with the indexes
+grep '_JC$' $all_ID_list_file > $JC_IDS_list_file
+grep '_JA$' $all_ID_list_file > $JA_IDS_list_file
+
+# Generate a VCF for only the indexed JC and JA
+bcftools view \
+    -S $JC_IDS_list_file  \
+    -T $loci_ID_file \
+    $FINAL_VCF \
+    -Oz -o $BOOT_FOLDER/vcf/only_JC.vcf.gz
+    # -Oz: output, (z-compressed, v-plain text) 
+
+bcftools view \
+    -S $JA_IDS_list_file  \
+    -T $loci_ID_file \
+    $FINAL_VCF \
+    -Oz -o $BOOT_FOLDER/vcf/only_JA.vcf.gz
+    # -Oz: output, (z-compressed, v-plain text) 
 
 # ----------------------------------
 # Convert VCF to genepop
 "$SCRIPT_LOC/data_generation/bootstrap_to_genepop.sh" \
     $BOOT_FOLDER/genepop \
-    $FINAL_VCF
+    $FINAL_VCF \
+    $FINAL_GENEPOP
+
+# Programmatically add "Pop" above the JC and JA populations
+#  - Keep the first twp lines the same
+{
+  head -n 2 "$FINAL_GENEPOP"
+  tail -n +3 "$FINAL_GENEPOP" | sort -t'_' -k2,2 | awk '{
+      if (!seen && $0 ~ /_JC/) {
+          print "POP"
+          seen = 1
+      }
+      print
+  }'
+} > "$BOOT_FOLDER/genepop/sorted.gen"
+
+# Replace the final genepop with the sorted
+mv "$BOOT_FOLDER/genepop/sorted.gen" "$FINAL_GENEPOP"
 
 # ----------------------------------
 # Generate hybrids 
+echo "================================="
+echo "Generating hybrids..."
 
-# -- F1s
-
-# -- BC1s
-
-# -- BC2s 
+# -- F1s, BC1s, BC2s
+python3 "$SCRIPT_LOC/data_generation/recom-sim.py" \
+    $FINAL_GENEPOP \
+    3 \
+    --num-off $num_F1 \
+    --out $BOOT_FOLDER/genepop/hybrids.gen
 
 # ----------------------------------
 # Convert hybrid genepop back to VCF 
+echo "================================="
+echo "Converting hybrid genepop to VCF"
 
+Rscript "$SCRIPT_LOC/data_conversion/genepop_to_vcf.R" \
+    $BOOT_FOLDER/genepop/hybrids.gen \
+    $BOOT_FOLDER/vcf/ \
+    "with_hybrids"
+gzip "$BOOT_FOLDER/vcf/with_hybrids.vcf"
 
 # ----------------------------------
 # Convert VCF to STR 
+echo "================================="
+echo "Converting hybrid VCF to STR"
+"$SCRIPT_LOC/data_conversion/vcf_to_structure.sh" \
+    "$BOOT_FOLDER/vcf/with_hybrids.vcf.gz" \
+    $BOOT_FOLDER/str/with_hybrids.str
+   

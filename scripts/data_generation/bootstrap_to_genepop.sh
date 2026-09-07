@@ -7,13 +7,11 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 DATA_LOC="$BASE_DIR/data"
 GENEPOP_FOLDER=$1
 VCF_TO_CONVERT=$2
-
-VCF_NAME=$(basename $VCF_TO_CONVERT .vcf.gz)
-OUTPUT_FILE="$GENEPOP_FOLDER/$VCF_NAME.gen"
+OUTPUT_GENEPOP=$3
 
 Rscript "$SCRIPT_LOC/data_conversion/vcf_to_genepop.R" \
         $VCF_TO_CONVERT \
-        $OUTPUT_FILE
+        $OUTPUT_GENEPOP
 
 ## CONVERTING A LIST OF VCFS
 # Collect all the input files from the designated folder

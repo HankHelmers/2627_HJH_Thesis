@@ -40,7 +40,7 @@ args <- commandArgs(trailingOnly = TRUE)
 print(cat("Number of arguments: ", length(args)))
 
 if (length(args) != 3) {
-    stop("Usage: genepop_to_vcf <input_vcf_file> <output_file> <out_filename>")
+    stop("Usage: genepop_to_vcf <input_vcf_file> <output_path> <out_filename>")
 }
 
 genepop_to_vcf(args[1], args[2], args[3])
