@@ -39,7 +39,7 @@ RUNREPEATS=${12}
 date_name=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$EXP_OUTPUT_LOC/structure_$date_name"
 OUTFOLDER="$EXP_OUTPUT_LOC/structure_$date_name"
-OUTFILE="$OUTFOLDER/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming
+OUTFILE="$OUTFOLDER/{OUTPUT_FILE_NAME}" # Create OUTFILE location, add {} for dynamic naming below
 INFILE=$DATA_LOC
 
 
@@ -87,13 +87,13 @@ for i in $(seq 1 "$RUNREPEATS"); do
     sed -i "s|{OUTPUT_FILE_NAME}|run${i}|g" "$param_file"
 
     # run structure
-    structure -m "$param_file" -e extraparams
+    # structure -m "$param_file" -e extraparams
 
-    # move parameter files
-    mv "$param_file" "$OUTFOLDER/str_parameters/"    
-    mv *params* "$OUTFOLDER/str_parameters"
-    mv seed.txt "$OUTFOLDER/str_parameters"
-    mv extraparams "$OUTFOLDER/str_parameters"
+    # # move parameter files
+    # mv "$param_file" "$OUTFOLDER/str_parameters/"    
+    # mv *params* "$OUTFOLDER/str_parameters"
+    # mv seed.txt "$OUTFOLDER/str_parameters"
+    # mv extraparams "$OUTFOLDER/str_parameters"
 
     # seed file may collide if all runs share cwd
     # if [[ -f seed.txt ]]; then

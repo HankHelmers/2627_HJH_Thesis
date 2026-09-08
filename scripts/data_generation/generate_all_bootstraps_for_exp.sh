@@ -14,7 +14,7 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 
 EXP_FOLDER=$1 
 raw_data_file_loc=$2 # INPUT VCF
-num_bootstraps=5 #$3
+num_bootstraps=$3
 
 JC_IDS_list_file=$4  # List of possible JC ids to subset from
 JA_IDS_list_file=$5  # List of possible JA ids to subset from

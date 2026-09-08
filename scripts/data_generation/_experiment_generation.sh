@@ -1,11 +1,10 @@
-
 # ----------------------------- Configurations
 BASE_DIR="/work/williarj/williarj/2627_HJH_Thesis"            
 DATA_LOC="$BASE_DIR/data"
 RAW_DATA_LOC="$DATA_LOC/raw_input"
 SCRIPT_LOC="$BASE_DIR/scripts"
 
-EXP_ID=1
+EXP_ID=$1
 
 EXP_DATASET="$DATA_LOC/all_experiments_08_15.csv"
 RAW_DATASET="$DATA_LOC/raw_input_data_08_15.csv"
@@ -31,7 +30,7 @@ fi
 # 2. Parse CSV fields into variables 
 # Set internal delimitor character to ','; then read will seperate by ','
 IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
-        vary_JC_pop vary_JA_pop num_loci vary_loci description purpose question <<< "$EXP_ROW"
+        vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
 echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id"
 
