@@ -6,11 +6,13 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 
 EXP_ID=$1
 
-EXP_DATASET="$DATA_LOC/all_experiments_08_15.csv"
+EXP_DATASET="$DATA_LOC/all_experiments_09_08.csv"
 RAW_DATASET="$DATA_LOC/raw_input_data_08_15.csv"
 EXP_FOLDER="$DATA_LOC/generated_input/experiment_${EXP_ID}"
 
 mkdir -p "$EXP_FOLDER"
+
+LOG_FILE="$EXP_FOLDER/exp_log.txt"
 
 # -----------------
 # 1. With EXP_ID retrieve relevant experiment data 
@@ -22,7 +24,7 @@ mkdir -p "$EXP_FOLDER"
 EXP_ROW=$(awk -F',' -v id="$EXP_ID" '$1 == id {print $0; exit}' "$EXP_DATASET")
 
 if [[ -z "$EXP_ROW" ]]; then
-    echo "Error: Experiment ID $EXP_ID not found in $EXP_DATASET" >&2
+    echo "Error: Experiment ID $EXP_ID not found in $EXP_DATASET" >> $LOG_FILE
     exit 1
 fi
 
@@ -32,14 +34,14 @@ fi
 IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
         vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
-echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id"
+echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> $LOG_FILE
 
 # -----------------
 # 3. Retrieve dataset file from dataset_id
 RAW_DATASET_ROW=$(awk -F',' -v id="$dataset_id" '$1 == id {print $0; exit}' "$RAW_DATASET")
 
 if [[ -z "$EXP_ROW" ]]; then
-    echo "Error: Dataset ID $dataset_id not found in $RAW_DATASET_ROW" >&2
+    echo "Error: Dataset ID $dataset_id not found in $RAW_DATASET_ROW" >> $LOG_FILE
     exit 1
 fi
 
@@ -52,11 +54,11 @@ DATASET_FILE="$DATASET_LOC/$primary_input_file"   # Full input path to VCF
 JC_IDS_list_file="$DATASET_LOC/$JC_IDS_list_file" # Full input path to JC IDS list file
 JA_IDS_list_file="$DATASET_LOC/$JA_IDS_list_file" # Full input path to JA IDS list file
 
-echo "Loaded dataset file for experiment $EXP_ID --> $DATASET_FILE"
+echo "Loaded dataset file for experiment $EXP_ID --> $DATASET_FILE" >> $LOG_FILE
 
 # -----------------
 # 4. Generate bootstraps 
-echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh"
+echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh" >> $LOG_FILE
 "$SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh" \
     $EXP_FOLDER \
     $DATASET_FILE \
@@ -71,4 +73,4 @@ echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_boo
     $vary_JC_pop \
     $vary_JA_pop \
     $num_loci \
-    $vary_loci
+    $vary_loci >> $LOG_FILE 2>&1

@@ -15,7 +15,7 @@
 #   - #10: RUNREPEATS - number of runs to repeat
 
 #!/bin/bash
-which structure # verify accessible
+# which structure # verify accessible
 
 # Read basic inputs
 INPUT_STR_FILE=$1
@@ -34,29 +34,30 @@ RUNLENGTH=${10}
 RUNREPEATS=${11}
 
 # ---------------------------------------------
-echo "Testing structure inputs"
+# echo "--------------------------------------"
+# echo "Testing structure inputs"
 
-# Group 1: File Paths & Locations
-echo "Files & Folders:"
-printf "  %-22s %s\n" "Input STR File:" "$INPUT_STR_FILE"
-printf "  %-22s %s\n" "Output Location:" "$EXP_OUTPUT_LOC"
-printf "  %-22s %s\n" "Main Params Location:" "$MAIN_PARAMS_LOC"
-printf "  %-22s %s\n" "Extra Params Location:" "$EXTRA_PARAMS_LOC"
-echo ""
+# # Group 1: File Paths & Locations
+# echo "Files & Folders:"
+# printf "  %-22s %s\n" "Input STR File:" "$INPUT_STR_FILE"
+# printf "  %-22s %s\n" "Output Location:" "$EXP_OUTPUT_LOC"
+# printf "  %-22s %s\n" "Main Params Location:" "$MAIN_PARAMS_LOC"
+# printf "  %-22s %s\n" "Extra Params Location:" "$EXTRA_PARAMS_LOC"
+# echo ""
 
-# Group 2: Experimental & Dataset Inputs
-echo "Dataset Metrics:"
-printf "  %-22s %s\n" "Number of Individuals:" "$NUMINDS"
-printf "  %-22s %s\n" "Number of Loci:" "$NUMLOCI"
-printf "  %-22s %s\n" "Label Flag:" "$LABEL"
-printf "  %-22s %s\n" "Missing Data Value:" "$MISSING"
-echo ""
+# # Group 2: Experimental & Dataset Inputs
+# echo "Dataset Metrics:"
+# printf "  %-22s %s\n" "Number of Individuals:" "$NUMINDS"
+# printf "  %-22s %s\n" "Number of Loci:" "$NUMLOCI"
+# printf "  %-22s %s\n" "Label Flag:" "$LABEL"
+# printf "  %-22s %s\n" "Missing Data Value:" "$MISSING"
+# echo ""
 
-# Group 3: Structure Run Parameters
-echo "STR Parameters:"
-printf "  %-22s %s\n" "Burn-in Iterations:" "$BURNIN"
-printf "  %-22s %s\n" "Run Length:" "$RUNLENGTH"
-printf "  %-22s %s\n" "Run Repeats:" "$RUNREPEATS"
+# # Group 3: Structure Run Parameters
+# echo "STR Parameters:"
+# printf "  %-22s %s\n" "Burn-in Iterations:" "$BURNIN"
+# printf "  %-22s %s\n" "Run Length:" "$RUNLENGTH"
+# printf "  %-22s %s\n" "Run Repeats:" "$RUNREPEATS"
 
 # ----------------------------- File management
 # Make output directory for structure outputs
@@ -114,13 +115,6 @@ for i in $(seq 1 "$RUNREPEATS"); do
     # run structure
     structure -m "$main_param_file" -e "$extra_param_file" >> $LOG_FILE
 
-    # # move parameter files
-    # mv "$main_param_file" "$OUTFOLDER/str_parameters/"    
-    # mv *params* "$OUTFOLDER/str_parameters"
-    # mv seed.txt "$OUTFOLDER/str_parameters"
-    # mv extraparams "$OUTFOLDER/str_parameters"
-
-    # seed file may collide if all runs share cwd
     if [[ -f seed.txt ]]; then
         mv seed.txt "$PARAMS_FOLDER/seed_run${i}.txt"
     fi

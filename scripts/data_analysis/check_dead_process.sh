@@ -1,0 +1,1 @@
+sacct -j 724020 --format=JobID,JobName,State,ExitCode,MaxRSS,TimeLimit

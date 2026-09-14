@@ -162,7 +162,7 @@ Rscript "$SCRIPT_LOC/data_conversion/genepop_to_vcf.R" \
     $BOOT_FOLDER/genepop/hybrids.gen \
     $BOOT_FOLDER/vcf/ \
     "with_hybrids"
-gzip "$BOOT_FOLDER/vcf/with_hybrids.vcf"
+# gzip "$BOOT_FOLDER/vcf/with_hybrids.vcf"
 
 # ----------------------------------
 # Convert VCF to STR 

@@ -48,7 +48,7 @@ echo "num_loci:           ${13}"
 echo "vary_loci:          ${14}"
 
 # Create experiment log file 
-LOG_FILE="$EXP_FOLDER/log.txt"
+LOG_FILE="$EXP_FOLDER/boot_gen_log.txt"
 est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
 echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
    

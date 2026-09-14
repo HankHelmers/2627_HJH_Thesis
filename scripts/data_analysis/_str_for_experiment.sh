@@ -22,89 +22,69 @@ EXTRA_PARAMS_LOC="$SCRIPT_LOC/data_analysis/template_extraparams"
 
 LABEL=1
 MISSING=-9
-echo $EXP_FOLDER
+LOG_FILE="$EXP_FOLDER/str_log.txt"
+
+# reset log if needed
+echo "" > $LOG_FILE
 
 # ----------------------------- Get inputs 
-echo "Loading... Experiment $EXP_ID -> Dataset ID: $dataset_id"
+echo "Loading... Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 
 # -----------------
 # 1. With EXP_ID retrieve relevant experiment data 
-#        Reads: Seperate columns in EXP_DATASET with a comma. Column 1 ($1), Column 2 ($2), 
-#               and so forth. 
-#               
-#               Using the interval variable 'id', if column 1's ($1) value is equal to this
-#               id, return this entire row to variable.
 EXP_ROW=$(awk -F',' -v id="$EXP_ID" '$1 == id {print $0; exit}' "$EXP_DATASET")
 
 if [[ -z "$EXP_ROW" ]]; then
-    echo "Error: Experiment ID $EXP_ID not found in $EXP_DATASET" >&2
+    echo "Error: Experiment ID $EXP_ID not found in $EXP_DATASET" >> "$LOG_FILE" 2>&1
     exit 1
 fi
 
 # -----------------
 # 2. Parse CSV fields into variables 
-# Set internal delimitor character to ','; then read will seperate by ','
 IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
         vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
 # 3. Clean inputs 
 TOTAL_NUM_INDS=$(( num_JC_inds * 8 ))
 
-echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id"
+echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 
 # -----------------------------
-# Get the folders in the EXP_Folder
+echo "Beginning bootstraps sequencially." >> "$LOG_FILE"
 
 # For each bootstrap folder in EXP_FOLDER, run structure 
-boot_num=1
-CURR_BOOT_FOLDER=$EXP_FOLDER/boot$boot_num
+for boot_num in $(seq 4 5); do #$(seq 2 "$num_bootstraps"); do 
+( 
+    echo "Starting boot $boot_num" >> "$LOG_FILE"
+    start=$(date +%s%3N)
 
-EXP_OUTPUT_FOLDER="$CURR_BOOT_FOLDER/str_outputs"
-mkdir -p $EXP_OUTPUT_FOLDER
+    CURR_BOOT_FOLDER=$EXP_FOLDER/boot$boot_num
 
-# For each bootstrap folder in EXP_FOLDER, run structure 
-    # Get file in $EXP_FOLDER/boot$boot_num/str/
-str_files=("$CURR_BOOT_FOLDER/str/"*)
-INPUT_STR_FILE="$CURR_BOOT_FOLDER/str/$(basename "${str_files[0]}")" # Theoretically only one str in here
+    EXP_OUTPUT_FOLDER="$CURR_BOOT_FOLDER/str_outputs"
+    mkdir -p $EXP_OUTPUT_FOLDER
 
-# echo "Running structure runs for boot $boot_num"
-
-# # Group 1: System File Paths
-# echo "Files & Folders:"
-# printf "  %-22s %s\n" "Input Str File:" "$INPUT_STR_FILE"
-# printf "  %-22s %s\n" "Output Folder:" "$EXP_OUTPUT_FOLDER"
-# printf "  %-22s %s\n" "Main Params Path:" "$MAIN_PARAMS_LOC"
-# printf "  %-22s %s\n" "Extra Params Path:" "$EXTRA_PARAMS_LOC"
-# echo ""
-
-# # Group 2: Data Dimensions
-# echo "Dataset Metrics:"
-# printf "  %-22s %s\n" "Total Individuals:" "$TOTAL_NUM_INDS"
-# printf "  %-22s %s\n" "Loci each:" "$num_loci" # num in the exp
-# echo ""
-
-# # Group 3: Runtime/Algorithm Variables
-# echo "STR Parameters:"
-# printf "  %-22s %s\n" "Burn-in Iterations:" "$str_burnin"
-# printf "  %-22s %s\n" "Run Length:" "$str_runlength"
-# printf "  %-22s %s\n" "Run Repeats:" "$str_runrepeats"
+    str_files=("$CURR_BOOT_FOLDER/str/"*)
+    INPUT_STR_FILE="$CURR_BOOT_FOLDER/str/$(basename "${str_files[0]}")" 
 
     # STR run 
-"$SCRIPT_LOC/data_analysis/fork_structure_runs.sh" \
-    $INPUT_STR_FILE \
-    $EXP_OUTPUT_FOLDER \
-    $MAIN_PARAMS_LOC \
-    $EXTRA_PARAMS_LOC \
-    $TOTAL_NUM_INDS \
-    $num_loci \
-    $LABEL \
-    $MISSING \
-    $str_burnin \
-    $str_runlength \
-    $str_runrepeats
+    "$SCRIPT_LOC/data_analysis/fork_structure_runs.sh" \
+        $INPUT_STR_FILE \
+        $EXP_OUTPUT_FOLDER \
+        $MAIN_PARAMS_LOC \
+        $EXTRA_PARAMS_LOC \
+        $TOTAL_NUM_INDS \
+        $num_loci \
+        $LABEL \
+        $MISSING \
+        $str_burnin \
+        $str_runlength \
+        $str_runrepeats
 
-    # Add output to a new CSV
-    # probably easiest as a Rscript to be honest
-    # parseStrOut(pathToStructureOutput, outputPath)
-        # will have to loop through all of the outputs in all the folders 
-        # and runs in those folders
+    elapsed=$(($(date +%s%3N) - start))
+    minutes=$((elapsed / 60000))
+    seconds=$(((elapsed % 60000) / 1000))
+    total_time=$(($total_time + $elapsed))
+    echo "Run STRUCTURE on $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
+) done
+
+echo "All bootstraps complete." >> "$LOG_FILE"
