@@ -52,39 +52,56 @@ echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 # -----------------------------
 echo "Beginning bootstraps sequencially." >> "$LOG_FILE"
 
-# For each bootstrap folder in EXP_FOLDER, run structure 
-for boot_num in $(seq 4 5); do #$(seq 2 "$num_bootstraps"); do 
-( 
-    echo "Starting boot $boot_num" >> "$LOG_FILE"
-    start=$(date +%s%3N)
+# Run STRUCTURE on bootstraps in batches of 5
+batch_size=2
 
-    CURR_BOOT_FOLDER=$EXP_FOLDER/boot$boot_num
+for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
 
-    EXP_OUTPUT_FOLDER="$CURR_BOOT_FOLDER/str_outputs"
-    mkdir -p $EXP_OUTPUT_FOLDER
+    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
 
-    str_files=("$CURR_BOOT_FOLDER/str/"*)
-    INPUT_STR_FILE="$CURR_BOOT_FOLDER/str/$(basename "${str_files[0]}")" 
+    # Start up to 5 bootstrap jobs
+    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
+        (
+            echo "Starting boot $boot_num" >> "$LOG_FILE"
+            start=$(date +%s%3N)
 
-    # STR run 
-    "$SCRIPT_LOC/data_analysis/fork_structure_runs.sh" \
-        $INPUT_STR_FILE \
-        $EXP_OUTPUT_FOLDER \
-        $MAIN_PARAMS_LOC \
-        $EXTRA_PARAMS_LOC \
-        $TOTAL_NUM_INDS \
-        $num_loci \
-        $LABEL \
-        $MISSING \
-        $str_burnin \
-        $str_runlength \
-        $str_runrepeats
+            CURR_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+            EXP_OUTPUT_FOLDER="$CURR_BOOT_FOLDER/str_outputs"
 
-    elapsed=$(($(date +%s%3N) - start))
-    minutes=$((elapsed / 60000))
-    seconds=$(((elapsed % 60000) / 1000))
-    total_time=$(($total_time + $elapsed))
-    echo "Run STRUCTURE on $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
-) done
+            mkdir -p "$EXP_OUTPUT_FOLDER"
+
+            str_files=("$CURR_BOOT_FOLDER/str/"*)
+            INPUT_STR_FILE="$CURR_BOOT_FOLDER/str/$(basename "${str_files[0]}")"
+
+            # STR run
+            "$SCRIPT_LOC/data_analysis/fork_structure_runs.sh" \
+                "$INPUT_STR_FILE" \
+                "$EXP_OUTPUT_FOLDER" \
+                "$MAIN_PARAMS_LOC" \
+                "$EXTRA_PARAMS_LOC" \
+                "$TOTAL_NUM_INDS" \
+                "$num_loci" \
+                "$LABEL" \
+                "$MISSING" \
+                "$str_burnin" \
+                "$str_runlength" \
+                "$str_runrepeats"
+
+            elapsed=$(($(date +%s%3N) - start))
+            minutes=$((elapsed / 60000))
+            seconds=$(((elapsed % 60000) / 1000))
+
+            echo "Run STRUCTURE on boot $boot_num completed in ${minutes} min ${seconds} sec" >> "$LOG_FILE"
+
+        ) &
+
+    done
+
+    # Wait for all jobs in this batch to finish
+    wait
+
+    echo "Bootstrap batch completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+
+done
 
 echo "All bootstraps complete." >> "$LOG_FILE"

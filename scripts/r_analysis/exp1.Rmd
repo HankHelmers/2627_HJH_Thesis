@@ -1,0 +1,20 @@
+---
+title: "exp1"
+output: html_document
+---
+
+```{r setup}
+# CONFIGURATION --------------- 
+library(knitr)
+
+base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+
+# Test directory 
+list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
+
+exp_id <- 1
+
+# TESTING WILL NEED TO GENERALIZE
+str_output <- read.csv(paste0(base_dir, "data/outputs/experiment_1_test.csv"))
+```
+
