@@ -49,14 +49,19 @@ echo "vary_loci:          ${14}"
 
 # Create experiment log file 
 LOG_FILE="$EXP_FOLDER/boot_gen_log.txt"
-est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
-echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
+# est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
+# echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
    
-total_time=0
+total_time=0 # Tracking total time exp gen takes 
+batch_size=5
 
-# FOR i BOOTSTRAP (num_bootstraps)
-for boot_num in $(seq 1 $num_bootstraps)
-do  
+run_bootstrap() {
+    # Access the passed parameter via $1 instead of boot_num
+    local boot_num=$1
+
+    # Stagger execution slightly to prevent file system metadata race conditions
+    sleep $((boot_num % 5))
+
     # For log
     echo "-------------------------------------" >> $LOG_FILE
     echo "Starting boot $boot_num generation..." >> $LOG_FILE
@@ -79,6 +84,9 @@ do
     mkdir -p "$CURR_VCF_FOLDER"
     mkdir -p "$CURR_GENEPOP_FOLDER"
     mkdir -p "$CURR_STR_FOLDER"
+
+    BOOT_LOG_FILE="$CURR_BOOT_FOLDER/boot_log$boot_num"
+    echo "" $BOOT_LOG_FILE 
 
     # Create ID files
     curr_JC_ids_file="$CURR_BOOT_FOLDER/JC_ids.txt"
@@ -152,14 +160,34 @@ do
         $num_BC1 \
         $num_BC2 \
         $num_loci \
-        $raw_data_file_loc
+        $raw_data_file_loc  >> $BOOT_LOG_FILE
 
     elapsed=$(($(date +%s%3N) - start))
     minutes=$((elapsed / 60000))
     seconds=$(((elapsed % 60000) / 1000))
     total_time=$(($total_time + $elapsed))
     echo "Run $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
-done 
+
+}
+
+# NOTE: HAVE TO GENERATE FIRST AS THE REST REQUIRE IT
+run_bootstrap 1
+
+for ((batch_start=2; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+
+    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+    # Start up to 5 bootstrap jobs
+    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
+    (   
+        #run_bootstrap "$boot_num" &
+        print $boot_num
+    ) 
+    done 
+
+    # wait for all jobs in this batch to finish
+    wait
+    echo "Bootstrap batch completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+done
 
 echo "-----------------------------" >> $LOG_FILE
 echo "Bootstrap generation complete" >> $LOG_FILE

@@ -151,7 +151,7 @@ python3 "$SCRIPT_LOC/data_generation/recom-sim.py" \
     $FINAL_GENEPOP \
     3 \
     --num-off $num_F1 \
-    --out $BOOT_FOLDER/genepop/hybrids.gen
+    --out $BOOT_FOLDER/genepop/hybrids.gen > /dev/null
 
 # ----------------------------------
 # Convert hybrid genepop back to VCF 
@@ -161,8 +161,8 @@ echo "Converting hybrid genepop to VCF"
 Rscript "$SCRIPT_LOC/data_conversion/genepop_to_vcf.R" \
     $BOOT_FOLDER/genepop/hybrids.gen \
     $BOOT_FOLDER/vcf/ \
-    "with_hybrids"
-# gzip "$BOOT_FOLDER/vcf/with_hybrids.vcf"
+    "with_hybrids" 
+# gzip "$BOOT_FOLDER/vcf/with_hybrids.vcf" 
 
 # ----------------------------------
 # Convert VCF to STR 

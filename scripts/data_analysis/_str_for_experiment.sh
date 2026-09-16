@@ -53,7 +53,7 @@ echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 echo "Beginning bootstraps sequencially." >> "$LOG_FILE"
 
 # Run STRUCTURE on bootstraps in batches of 5
-batch_size=2
+batch_size=5
 
 for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
 

@@ -4,17 +4,83 @@ output: html_document
 ---
 
 ```{r setup}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 # CONFIGURATION --------------- 
 library(knitr)
+library(tidyverse)
+library(stringr)
 
 base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
 
 # Test directory 
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
 
-exp_id <- 1
+exp_id <- 0
 
-# TESTING WILL NEED TO GENERALIZE
-str_output <- read.csv(paste0(base_dir, "data/outputs/experiment_1_test.csv"))
+data <- read.csv(paste0(base_dir, "data/outputs/experiment_", exp_id,".csv"))
 ```
 
+```{r}
+# Data manipulation
+# 1. Rename Q values 
+data <- data %>% rename(JC = q_value_pop2_JC)
+data <- data %>% rename(JA = q_value_pop1_JA)
+
+# 2. Set hybrid statuses
+data <- data %>% mutate(
+  hybrid_status = case_when (
+    str_detect(ind_id, "IND") ~ str_split_i(ind_id, "_", 2),
+    str_detect(ind_id, "F1") ~ "F1",
+    str_detect(ind_id, "F2") ~ "F2",
+    str_detect(ind_id, "B2POP1") ~ "B2_JA",
+    str_detect(ind_id, "B2POP2") ~ "B2_JC",
+    str_detect(ind_id, "B3POP1") ~ "B3_JA",
+    str_detect(ind_id, "B3POP2") ~ "B3_JC"
+  )
+)
+
+# 3. Read data and set factor order
+data <- data %>%
+  mutate(hybrid_status = factor(
+    hybrid_status,
+    levels = c("JA", "JC", "F1", "F2", "B2_JA", "B2_JC", "B3_JA", "B3_JC")
+  ))
+```
+
+```{r}
+# Between hybrid statuses 
+
+# Assuming your dataframe is named df
+summary_data <- data %>%
+  group_by(hybrid_status) %>%
+  filter(hybrid_status == "JA") %>%
+  summarize(
+    mean_q_JA = mean(JA, na.rm = TRUE),
+    sd_q_JA   = sd(JA, na.rm = TRUE),
+    mean_q_JC = mean(JC, na.rm = TRUE),
+    sd_q_JC   = sd(JC, na.rm = TRUE),
+    total_runs  = n()
+  )
+print(summary_data)
+
+
+q_dist_plot <- ggplot(data, aes(x = hybrid_status, y = JC, fill = hybrid_status)) +
+  # Draw boxplot to show median and IQR
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  # Overlay actual individual observations
+  geom_jitter(width = 0.15, size = 2, alpha = 0.3) +
+  # Labels and scales
+  labs(
+    title = "Distribution of SIMULATED Hybrid Status",
+    x = "Hybrid Status",
+    y = "Q-value (1-JC, 0-JA)"
+  ) +
+  scale_y_continuous(limits = c(-0.05, 1.05), breaks = seq(0, 1, by = 0.2)) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none", # Hide redundant legend since x-axis shows categories
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
