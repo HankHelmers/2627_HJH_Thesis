@@ -1,0 +1,144 @@
+---
+title: "visualize_pca_real_sim"
+output: html_document
+---
+
+```{r}
+# REAL-----------------
+
+library(ggplot2)
+library(dplyr)
+library(readr)
+
+input_eigenval <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/09_17_26_pca_real_simulation/PCA_real_unpruned/PCA_real_unpruned.eigenval"
+input_eigenvec <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/09_17_26_pca_real_simulation/PCA_real_unpruned/PCA_real_unpruned.eigenvec"
+
+# read in from files
+pca <- read_table(input_eigenvec, col_names = FALSE)
+eigenval <- scan(input_eigenval)
+
+pc <- 1
+experiment_name <- "Real Data"
+
+# ---- Clean PCA data
+# remove nuisance column
+pca <- pca[,-1]
+# set column names
+names(pca)[1] <- "ind"
+names(pca)[2:ncol(pca)] <- paste0("PC", 1:(ncol(pca)-1))
+
+print(pca[1])
+
+# first convert to percentage variance explained
+pve <- data.frame(PC = 1:20, pve = eigenval/sum(eigenval)*100)
+
+    # ---- Variance explained plot
+    # Visualize the amount of variance explained by each PC 
+a <- ggplot(pve, aes(PC, pve)) + geom_bar(stat = "identity") + ylab("Percentage variance explained") + theme_light() + theme(text = element_text(size = 20)) 
+a
+
+pc_to_graph_1 <- paste0("PC", 1)
+pc_to_graph_2 <- paste0("PC", 2)
+
+# ---- PCA scatter plot
+b <- ggplot(pca, aes(
+    x = .data[[pc_to_graph_1]],
+    y = .data[[pc_to_graph_2]])) 
+b <- b + geom_point(size = 3, color = "lightblue") + coord_equal()
+b <- b + theme_light() + theme(text=element_text(size = 20))
+b <- b + labs(
+    title=experiment_name,
+    x = paste0("PC", pc, " (", signif(pve$pve[pc], 3), "%)"),
+    y = paste0("PC", pc+1, " (", signif(pve$pve[pc+1], 3), "%)")
+    )
+print(b)
+
+ggsave(
+    filename = file.path(paste0(experiment_name, "_variance_per_pca.png")),
+    plot = a
+)
+
+ggsave(
+    filename = file.path(paste0(experiment_name, "_PC_", pc, "_", pc+1, "_pca.png")),
+    plot = b
+)
+```
+
+
+```{r}
+# REAL-----------------
+
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(stringr)
+
+input_eigenval <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/09_17_26_pca_real_simulation/PCA_sim_unpruned/PCA_sim_unpruned.eigenval"
+input_eigenvec <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/09_17_26_pca_real_simulation/PCA_sim_unpruned/PCA_sim_unpruned.eigenvec"
+
+# read in from files
+pca <- read_table(input_eigenvec, col_names = FALSE)
+eigenval <- scan(input_eigenval)
+
+pc <- 3
+experiment_name <- "Simulated Data"
+
+# ---- Clean PCA data
+# remove nuisance column
+pca <- pca[,-1]
+# set column names
+names(pca)[1] <- "ind"
+names(pca)[2:ncol(pca)] <- paste0("PC", 1:(ncol(pca)-1))
+
+print(pca[1])
+
+# 2. Set hybrid statuses
+pca <- pca %>% mutate(
+  hybrid_status = case_when (
+    str_detect(ind, "IND") ~ str_split_i(ind, "_", 2),
+    str_detect(ind, "F1") ~ "F1",
+    str_detect(ind, "F2") ~ "F2",
+    str_detect(ind, "B2POP1") ~ "B2_JA",
+    str_detect(ind, "B2POP2") ~ "B2_JC",
+    str_detect(ind, "B3POP1") ~ "B3_JA",
+    str_detect(ind, "B3POP2") ~ "B3_JC"
+  )
+)
+pca <- pca %>%
+  mutate(hybrid_status = factor(
+    hybrid_status,
+    levels = c("JA", "JC", "F1", "F2", "B2_JA", "B2_JC", "B3_JA", "B3_JC")
+  ))
+
+# first convert to percentage variance explained
+pve <- data.frame(PC = 1:20, pve = eigenval/sum(eigenval)*100)
+
+    # ---- Variance explained plot
+    # Visualize the amount of variance explained by each PC 
+a <- ggplot(pve, aes(PC, pve)) + geom_bar(stat = "identity") + ylab("Percentage variance explained") + theme_light() + theme(text = element_text(size = 20)) 
+a
+
+pc_to_graph_1 <- paste0("PC", pc)
+pc_to_graph_2 <- paste0("PC", pc+1)
+
+# ---- PCA scatter plot
+b <- ggplot(pca, aes(x = .data[[pc_to_graph_1]],y = .data[[pc_to_graph_2]],color = hybrid_status))
+b <- b + geom_point(size = 3) + coord_equal()
+b <- b + theme_light() + theme(text=element_text(size = 20))
+b <- b + labs(
+    title=experiment_name,
+    x = paste0("PC", pc, " (", signif(pve$pve[pc], 3), "%)"),
+    y = paste0("PC", pc+1, " (", signif(pve$pve[pc+1], 3), "%)")
+    )
+print(b)
+
+ggsave(
+    filename = file.path(paste0(experiment_name, "_variance_per_pca.png")),
+    plot = a
+)
+
+ggsave(
+    filename = file.path(paste0(experiment_name, "_PC_", pc, "_", pc+1, "_pca.png")),
+    plot = b
+)
+```

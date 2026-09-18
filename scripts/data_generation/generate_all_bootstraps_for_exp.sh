@@ -178,10 +178,7 @@ for ((batch_start=2; batch_start<=num_bootstraps; batch_start+=batch_size)); do
     echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
     # Start up to 5 bootstrap jobs
     for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-    (   
-        #run_bootstrap "$boot_num" &
-        print $boot_num
-    ) 
+        run_bootstrap "$boot_num" &
     done 
 
     # wait for all jobs in this batch to finish
