@@ -28,5 +28,5 @@ sed '1,2d' "intermediate.recode.strct_in" > "intermediate_no_loci_id.recode.strc
 cut -d' ' -f1,3- "intermediate_no_loci_id.recode.strct_in" > "$FINAL_STRUCTURE_FILE"
 
 # Remove intermediates 
-rm intermediate*
+# rm intermediate*
 
