@@ -159,67 +159,60 @@ bootstrap_ids() {
 # NOTE: HAVE TO GENERATE FIRST AS THE REST REQUIRE IT
 bootstrap_ids 1
 
-for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+echo "Starting generation: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
 
-    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+# Run in sequence
+for ((boot_num=2; boot_num<=$num_bootstraps; boot_num++)); do
+    LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+    LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
 
-    # Run in sequence
-    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-        LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-        LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
-
-        if [ "$boot_num" -ne 1 ]; then 
-            # bootstrap on ids for this boot_num, if not 1
-            # boot1 has to be generated first 
-            bootstrap_ids "$boot_num"
-        fi
-    done
-
-    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-        LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-        LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
-
-        # Generate the new VCFs with the bootstrapped ids
-        "$SCRIPT_LOC/data_generation/subset_vcf_with_boot_ids.sh" \
-            $LOCAL_BOOT_FOLDER \
-            $boot_num \
-            $num_JC_inds \
-            $num_JA_inds \
-            $num_F1 \
-            $num_BC1 \
-            $num_BC2 \
-            $num_loci \
-            $raw_data_file_loc  >> $LOCAL_LOG_FILE
-    done
-
-    echo "Bootstrap batch VCF-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+    bootstrap_ids "$boot_num"
 done
 
-# Then run the long generation task in parallel
-# Generate the new VCFs with the bootstrapped ids
-for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+# for ((boot_num=1; boot_num<=$num_bootstraps; boot_num++)); do
+#     LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#     LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
 
-    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-    # Start up to 5 bootstrap jobs
+#     # Generate the new VCFs with the bootstrapped ids
+#     "$SCRIPT_LOC/data_generation/subset_vcf_with_boot_ids.sh" \
+#         $LOCAL_BOOT_FOLDER \
+#         $boot_num \
+#         $num_JC_inds \
+#         $num_JA_inds \
+#         $num_F1 \
+#         $num_BC1 \
+#         $num_BC2 \
+#         $num_loci \
+#         $raw_data_file_loc  >> $LOCAL_LOG_FILE
+# done
+
+# echo "Bootstrap batch VCF-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+
+# # Then run the long generation task in parallel
+# # Generate the new VCFs with the bootstrapped ids
+# for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+
+#     echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+#     # Start up to 5 bootstrap jobs
     
-    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-        LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-        LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
+#     for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
+#         LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#         LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
         
-        "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
-            $LOCAL_BOOT_FOLDER \
-            $boot_num \
-            $num_JC_inds \
-            $num_JA_inds \
-            $num_F1 \
-            $num_BC1 \
-            $num_BC2 \
-            $num_loci \
-            $raw_data_file_loc  >> $LOCAL_LOG_FILE &
-    done 
+#         "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
+#             $LOCAL_BOOT_FOLDER \
+#             $boot_num \
+#             $num_JC_inds \
+#             $num_JA_inds \
+#             $num_F1 \
+#             $num_BC1 \
+#             $num_BC2 \
+#             $num_loci \
+#             $raw_data_file_loc  >> $LOCAL_LOG_FILE &
+#     done 
 
-    # wait for all jobs in this batch to finish
-    wait
+#     # wait for all jobs in this batch to finish
+#     wait
     echo "Bootstrap batch simulation and file-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
 done
 

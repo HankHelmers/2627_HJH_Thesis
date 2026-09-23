@@ -45,7 +45,7 @@ IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds 
         vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
 # 3. Clean inputs 
-TOTAL_NUM_INDS=$(( num_JC_inds * 8 ))
+TOTAL_NUM_INDS=$(( num_JC_inds + num_JA_inds + $num_F1 * 6))
 
 echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 
@@ -94,14 +94,12 @@ for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
             echo "Run STRUCTURE on boot $boot_num completed in ${minutes} min ${seconds} sec" >> "$LOG_FILE"
 
         ) &
-
     done
 
     # Wait for all jobs in this batch to finish
     wait
 
     echo "Bootstrap batch completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-
 done
 
 echo "All bootstraps complete." >> "$LOG_FILE"

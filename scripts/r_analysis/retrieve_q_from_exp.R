@@ -18,6 +18,9 @@ library(dplyr)
 library(purrr)
 
 retrieve_q_from_exp <- function(exp_id) {
+  # TESTING
+  # exp_id <- 5
+  
   # Retrieve experiment folder
   exp_folder <- paste0("data/generated_input/experiment_", exp_id)
   
@@ -29,7 +32,10 @@ retrieve_q_from_exp <- function(exp_id) {
   
   # Loop through each boot, retrieve all its runs 
   for (boot_num in 1:length(boot_folders)) {
-    # boot_num <- 1
+    # FOR TESTING
+    # if (boot_num == 6) {
+    #   next
+    # }
     
     # Get current bootstrap folder
     curr_boot_folder <- boot_folders[boot_num]
@@ -37,7 +43,7 @@ retrieve_q_from_exp <- function(exp_id) {
     
     # Each folder was a seperate time it run was attempted
     run_folders <- list.dirs(boot_results_folder, recursive = FALSE)
-    recent_run_folder <- tail(sort(run_folders), 1)
+    recent_run_folder <- head(sort(run_folders), 1)
     
     # Retrieve the runtime from the folder name
     raw_time_run      <- basename(recent_run_folder)
@@ -52,9 +58,9 @@ retrieve_q_from_exp <- function(exp_id) {
     # Read the runs and automatically extract the individual labels
     q_list <- readQ(files = run_files, filetype="structure", indlabfromfile = TRUE)
     
-    slist <- lapply(q_list, function(sublist) lapply(sublist, sort)) # sort all sublists
-    slist <- as.qlist(q_list)                                        # Add metadata back 
-    slist <- alignK(slist)                                           # Align the population Qs
+    # Convert straight to a qlist object and align clusters safely
+    slist <- as.qlist(q_list)                                        
+    slist <- alignK(slist)                                           
     
     # Summarize this bootstraps multiple runs onto final CSV
     # experiment_ID	bootstrap_ID	time_run ind_id	hybrid_status	q-value-pop1 q-value-pop2
@@ -69,6 +75,8 @@ retrieve_q_from_exp <- function(exp_id) {
       if (is.null(ind_id)) {
         ind_id <- seq_len(nrow(q_matrix))
       }
+      
+      total_clusters <- ncol(q_matrix)
       
       # Map columns dynamically to pop1 and pop2 based on your requirements
       # Column names in pophelper usually default to Cluster1, Cluster2, etc.
@@ -107,6 +115,7 @@ retrieve_q_from_exp <- function(exp_id) {
   write.csv(csv_data, file = output_csv_path, row.names = FALSE)
 }
 
+retrieve_q_from_exp(4)
 
 
 
