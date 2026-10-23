@@ -1,0 +1,85 @@
+---
+title: "FstAcrossAll"
+output: html_document
+---
+
+```{r}
+library(vcfR)
+library(pegas)
+library(tidyverse)
+
+# ------------------------------------------------------------------------------
+# 1. Load VCF and Population Metadata
+# ------------------------------------------------------------------------------
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+# CONFIGURATION --------------- 
+library(knitr)
+library(tidyverse)
+library(stringr)
+
+base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+
+# Test directory 
+list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
+
+# Load your 66,000 loci VCF
+vcf <- read.vcfR((paste0(base_dir, "data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf")))
+
+# Load population assignments (Must match VCF sample IDs)
+# Columns required: SampleID, Population
+pop_info <- read.csv((paste0(base_dir, "data/raw_input/Ebrahimi_3_3_2026_prepared/pop_ids.csv")))
+
+# Ensure population order matches VCF sample order
+sample_names <- colnames(vcf@gt)[-1]
+pop_vector <- pop_info$Population[match(sample_names, pop_info$SampleID)]
+```
+
+# Compute Fst
+```{r}
+# Convert VCF object to pegas 'loci' class
+pegas_loci <- vcfR2loci(vcf)
+
+# Assign populations directly to the loci object or pass as a vector
+# pegas::Fst expects either a 'population' column or a population factor vector
+fst_matrix <- Fst(pegas_loci, pop = as.factor(pop_vector))
+
+# pegas returns a matrix with columns: FIT, FST, FIS for each locus
+# Extract per-locus FST values into a clean tibble
+fst_df <- tibble(
+  locus_id = rownames(fst_matrix),
+  FST = fst_matrix[, "Fst"]
+) %>%
+  drop_na(FST) %>%
+  # Replace negative WC estimates with 0 for biological interpretation
+  mutate(FST_clean = ifelse(FST < 0, 0, FST))
+
+```
+
+# Stats 
+```{r}
+print(summary(fst_df$FST_clean))
+
+# Measure tail heaviness (e.g., proportion of loci > 0.5)
+p_outliers <- mean(fst_df$FST_clean > 0.5)
+cat(sprintf("\nProportion of loci with FST > 0.5: %.2f%%\n", p_outliers * 100))
+
+fst_plot <- ggplot(fst_df, aes(x = FST_clean)) +
+  geom_histogram(
+    aes(y = after_stat(density)), 
+    bins = 100, 
+    fill = "#2b8cbe", 
+    color = "white", 
+    alpha = 0.75
+  ) +
+  geom_density(color = "#045a8d", linewidth = 1) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = expression(paste("Per-Locus ", F[ST], " Distribution across 66,000 Loci")),
+    # subtitle = "Evaluating outlier locus prevalence vs. background drift",
+    x = expression(F[ST]),
+    y = "Density"
+  ) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2))
+
+print(fst_plot)
+```

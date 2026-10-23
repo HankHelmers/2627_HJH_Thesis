@@ -1,0 +1,360 @@
+---
+title: "exp123"
+output: html_document
+---
+
+# Data import 
+
+```{r setup}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+# CONFIGURATION --------------- 
+library(knitr)
+library(tidyverse)
+library(stringr)
+
+base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+
+# Test directory 
+list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
+
+data <- data.frame()
+data1 <- read.csv(paste0(base_dir, "data/outputs/experiment_1.csv"))
+data2 <- read.csv(paste0(base_dir, "data/outputs/experiment_2.csv"))
+data3 <- read.csv(paste0(base_dir, "data/outputs/experiment_3.csv"))
+data <- rbind(data, data1)
+data <- rbind(data, data2)
+data <- rbind(data, data3)
+```
+
+# Data manipulation
+
+```{r}
+# 1. Rename Q values 
+data <- data %>% select(-q_value_pop2) # remove, and then decide if we need to 1-pop or now 
+
+data <- data %>%
+  mutate(
+    hybrid_status = case_when(
+      str_detect(ind_id, "IND") ~ str_split_i(ind_id, "_", 2),
+      str_detect(ind_id, "F1") ~ "F1",
+      str_detect(ind_id, "F2") ~ "F2",
+      str_detect(ind_id, "B2POP1") ~ "B2POP1",
+      str_detect(ind_id, "B2POP2") ~ "B2POP2",
+      str_detect(ind_id, "B3POP1") ~ "B3POP1",
+      str_detect(ind_id, "B3POP2") ~ "B3POP2"
+    )
+  )
+
+# JC_orientation means pop1 == JC? -- doesn't necessary align with the BC2POP1 labels
+data <- data %>%
+  group_by(experiment_ID, bootstrap_ID, run_id) %>%
+  mutate(
+    JC_orientation = mean(
+      q_value_pop1[hybrid_status == "JC"],
+      na.rm = TRUE
+    ) > 0.5,
+    
+    JC = if_else(
+      JC_orientation,
+      q_value_pop1,
+      1 - q_value_pop1
+    )
+  ) %>%
+  ungroup()
+
+# Correct labels 
+data <- data %>% mutate(
+    hybrid_status = case_when(
+      # Known pure individuals
+      str_detect(ind_id, "_JC$") ~ "JC",
+      str_detect(ind_id, "_JA$") ~ "JA",
+      
+      # F1 / F2
+      str_detect(ind_id, "F1") ~ "F1",
+      str_detect(ind_id, "F2") ~ "F2",
+      
+      # B2
+      # JC_orientation = True, means that pop2=JC, pop1=JA
+      str_detect(ind_id, "B2POP1") & JC_orientation ~ "B2_JA",
+      str_detect(ind_id, "B2POP2") & JC_orientation ~ "B2_JC",
+      str_detect(ind_id, "B2POP1") & !JC_orientation ~ "B2_JA",
+      str_detect(ind_id, "B2POP2") & !JC_orientation ~ "B2_JC",
+      
+      # B3
+      str_detect(ind_id, "B3POP1") & JC_orientation ~ "B3_JA",
+      str_detect(ind_id, "B3POP2") & JC_orientation ~ "B3_JC",
+      str_detect(ind_id, "B3POP1") & !JC_orientation ~ "B3_JA",
+      str_detect(ind_id, "B3POP2") & !JC_orientation ~ "B3_JC",
+      
+      TRUE ~ NA_character_
+    )
+)
+```
+
+# Cateogrical 
+```{r}
+# Factor order of the data/categorical variables 
+data <- data %>%
+  mutate(hybrid_status = factor(
+    hybrid_status,
+    levels = c("JA","B3_JA", "B2_JA", "F1", "F2", "B2_JC", "B3_JC", "JC")
+  ))
+
+data <- data %>%
+  mutate(
+    experiment_ID = factor(
+      experiment_ID,
+      levels = c(1, 2, 3),
+      labels = c("on_all", "on_JC", "on_JA")
+    )
+  )
+
+data <- data %>%
+  mutate(
+    bootstrap_ID = factor(bootstrap_ID)
+  )
+```
+
+# Data validation
+```{r}
+# Combine both grouping variables inside a single group_by statement
+summary_data <- data %>%
+  group_by(experiment_ID, hybrid_status) %>%
+  summarize(
+    # mean_q_JA  = mean(JA, na.rm = TRUE),
+    # sd_q_JA    = sd(JA, na.rm = TRUE),
+    mean_q_JC  = mean(JC, na.rm = TRUE),
+    sd_q_JC    = sd(JC, na.rm = TRUE),
+    total_runs = n(),
+    .groups    = "drop" # This automatically ungroups the data after summarizing
+  )
+```
+
+# Box plot - everything 
+
+```{r}
+q_dist_plot <- ggplot(data, aes(experiment_ID, y = JC, fill = experiment_ID)) +
+  # Draw boxplot to show median and IQR per experiment
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) +
+  # Overlay actual individual observations cleanly on top
+  # geom_jitter(width = 0.15, size = 2, alpha = 0.3) +
+  # Separate panels by hybrid class
+  facet_wrap(~ hybrid_status, ncol=8) +
+  # Corrected Labels
+  labs(
+    title = "Comparison of q-values across different loci",
+    x = "Experiment ID", # Fixed axis label to match data
+    y = "Q-value (1-JC, 0-JA)"
+  ) +
+  # scale_y_continuous(limits = c(-0.05, 1.05), breaks = seq(0, 1, by = 0.2)) +
+  theme_minimal(base_size = 14) +
+  theme(
+    #legend.position = "none",
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+print(q_dist_plot)
+```
+
+# Bar plot - everything 
+
+```{r}
+# Combine both grouping variables inside a single group_by statement
+summary_data <- data %>%
+  group_by(experiment_ID, hybrid_status) %>%
+  summarize(
+    # mean_q_JA  = mean(JA, na.rm = TRUE),
+    # sd_q_JA    = sd(JA, na.rm = TRUE),
+    mean_q_JC  = mean(JC, na.rm = TRUE),
+    sd_q_JC    = sd(JC, na.rm = TRUE),
+    total_runs = n(),
+    .groups    = "drop" # This automatically ungroups the data after summarizing
+  )
+
+print(summary_data)
+
+# summary_data <- summary_data %>% filter(!hybrid_status %in% c("JC", "JA"))
+q_dist_plot <- ggplot(summary_data, 
+                      aes(x = experiment_ID, y = sd_q_JC, fill = experiment_ID)) +
+  
+  # Bar chart
+  geom_col(alpha = 0.6) +
+  
+  # Set y-axis limits
+  scale_y_continuous(limits = c(0, 0.1)) +
+  
+  # Separate panels by hybrid class
+  facet_wrap(~ hybrid_status, ncol = 8) +
+  
+  labs(
+    title = "Comp. std. across different bootstrapping of all individuals, JC, JA",
+    x = "Experiment ID",
+    y = "Standard deviation of Q-value"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+print(q_dist_plot)
+```
+# Density plot 
+
+```{r}
+data_withminimized_JCJA <- data %>%
+ # group_by(experiment_ID, bootstrap_ID, hybrid_status) %>%
+  filter(
+    !hybrid_status %in% c("JA", "JC") #| row_number() <= 100
+  ) #%>%
+  #ungroup()
+
+# Density plot - Overlaid distributions across experiments per hybrid status
+q_density_plot <- ggplot(data_withminimized_JCJA, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(alpha = 0.35, linewidth = 0.7) +
+  facet_wrap(~ experiment_ID, ncol = 3) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.25)) +
+  labs(
+    title = "Density Distribution of Q-values Across Experiments",
+    x = "Q-value (1 = JC, 0 = JA)",
+    y = "Density",
+    fill = "Hybrid_status",
+    color = "Hybrid_status"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+print(q_density_plot)
+```
+# Density normalized
+```{r}
+# ggplot(data, aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+#   # Map y to ndensity to scale every group's maximum peak to 1.0
+#   geom_density(aes(y = after_stat(ndensity)), alpha = 0.25, linewidth = 0.8) +
+#   labs(
+#     title = "Normalized Density Distribution by Hybrid class",
+#     x = "Q-value (1-Butternut, 0-Ja)",
+#     y = "Relative Density (Max = 1)"
+#   ) +
+#   scale_x_continuous(limits = c(0, 1.05), breaks = seq(0, 1, by = 0.2)) +
+#   theme_minimal(base_size = 14) +
+#   theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+# Density plot - Overlaid distributions across experiments per hybrid status
+q_density_plot <- ggplot(data, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
+  facet_wrap(~ experiment_ID, ncol = 3) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.25)) +
+  labs(
+    title = "Density Distribution of Q-values Across Experiments",
+    x = "Q-value (1 = JC, 0 = JA)",
+    y = "Density",
+    fill = "Hybrid_status",
+    color = "Hybrid_status"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+print(q_density_plot)
+
+# ---
+density_data <- data %>%
+  group_by(experiment_ID, bootstrap_ID, hybrid_status) %>%
+  summarise(
+    density = list(density(JC, from = 0, to = 1)),
+    .groups = "drop"
+  ) %>%
+  tidyr::unnest(density) %>%
+  group_by(experiment_ID) %>%
+  mutate(
+    JC_max_density = max(y[x %in% x[hybrid_status == "JC"]]),
+    normalized_density = y / JC_max_density
+  ) %>%
+  ungroup()
+
+```
+
+# Compare bootstrap on inds vs. loci 
+```{r}
+summary_data <- rbind(summary_data, summary_data_2)
+
+# summary_data <- summary_data %>% filter(!hybrid_status %in% c("JC", "JA"))
+q_dist_plot <- ggplot(summary_data, 
+                      aes(x = experiment_ID, y = sd_q_JC, fill = experiment_ID)) +
+  
+  # Bar chart
+  geom_col(alpha = 0.6) +
+  
+  # Set y-axis limits
+  scale_y_continuous(limits = c(0, 0.1)) +
+  
+  # Separate panels by hybrid class
+  facet_wrap(~ hybrid_status, ncol = 8) +
+  
+  labs(
+    title = "Std across all experiments",
+    x = "Experiment ID",
+    y = "Standard deviation of Q-value"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 40, size = 8, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+print(q_dist_plot)
+
+
+```
+
+```{r}
+summary_data_label <- summary_data %>% 
+  filter(!hybrid_status %in% c("JC", "JA")) %>%
+  mutate(
+    color_group = case_when(
+      experiment_ID %in% c("on_all", "on_JC", "on_JA") ~ "By population",
+      experiment_ID %in% c("500_loci", "1000_loci", "5000_loci") ~ "By loci",
+      TRUE ~ "Other"
+    )
+  )
+
+q_dist_plot <- ggplot(summary_data_label, aes(x = experiment_ID, y = sd_q_JC, fill = color_group)) + 
+  # Bar chart
+  geom_col(alpha = 0.6) + 
+  # Set y-axis limits
+  scale_y_continuous(limits = c(0, 0.1)) + 
+  # Separate panels by hybrid class
+  facet_wrap(~ hybrid_status, ncol = 8) + 
+  # Custom colors for the groups
+  scale_fill_manual(values = c("By population" = "#2c7bb6", "By loci" = "#d7191c")) +
+  labs(
+    title = "Std across all experiments",
+    x = "Experiment ID",
+    y = "Standard deviation of Q-value",
+    fill = "Experiment Category"
+  ) + 
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.text.x = element_text(angle = 40, size = 8, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+print(q_dist_plot)
+```

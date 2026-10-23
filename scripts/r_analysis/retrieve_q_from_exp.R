@@ -19,7 +19,7 @@ library(purrr)
 
 retrieve_q_from_exp <- function(exp_id) {
   # TESTING
-  # exp_id <- 5
+  # exp_id <- 1
   
   # Retrieve experiment folder
   exp_folder <- paste0("data/generated_input/experiment_", exp_id)
@@ -36,6 +36,7 @@ retrieve_q_from_exp <- function(exp_id) {
     # if (boot_num == 6) {
     #   next
     # }
+    # boot_num <- 10
     
     # Get current bootstrap folder
     curr_boot_folder <- boot_folders[boot_num]
@@ -43,7 +44,7 @@ retrieve_q_from_exp <- function(exp_id) {
     
     # Each folder was a seperate time it run was attempted
     run_folders <- list.dirs(boot_results_folder, recursive = FALSE)
-    recent_run_folder <- head(sort(run_folders), 1)
+    recent_run_folder <- tail(sort(run_folders), 1)
     
     # Retrieve the runtime from the folder name
     raw_time_run      <- basename(recent_run_folder)
@@ -59,6 +60,14 @@ retrieve_q_from_exp <- function(exp_id) {
     q_list <- readQ(files = run_files, filetype="structure", indlabfromfile = TRUE)
     
     # Convert straight to a qlist object and align clusters safely
+    q_list <- lapply(q_list, function(df) {
+      if (ncol(df) > 2) {
+        df[, (ncol(df) - 1):ncol(df), drop = FALSE]
+      } else {
+        df
+      }
+    })
+    
     slist <- as.qlist(q_list)                                        
     slist <- alignK(slist)                                           
     
@@ -99,8 +108,8 @@ retrieve_q_from_exp <- function(exp_id) {
         time_run = time_run,
         run_id = run_id,
         ind_id = ind_id,
-        q_value_pop1_JA = q_val_pop1,
-        q_value_pop2_JC = q_val_pop2,
+        q_value_pop1 = q_val_pop1,
+        q_value_pop2 = q_val_pop2,
         stringsAsFactors = FALSE
       )
       
@@ -115,7 +124,7 @@ retrieve_q_from_exp <- function(exp_id) {
   write.csv(csv_data, file = output_csv_path, row.names = FALSE)
 }
 
-retrieve_q_from_exp(4)
+retrieve_q_from_exp(3)
 
 
 
