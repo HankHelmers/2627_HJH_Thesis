@@ -1,6 +1,6 @@
 #define OUTFILE /work/williarj/williarj/2627_HJH_Thesis/experiments/10_26_26_k2_k3_hybrids_dataset/k3_small
-#define INFILE /work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.str
-#define NUMINDS 178
+#define INFILE /work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/prepared_with_hybrids.str
+#define NUMINDS 338
 #define NUMLOCI 66834
 #define LABEL 1
 #define POPDATA 0 
