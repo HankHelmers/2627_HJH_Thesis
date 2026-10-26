@@ -155,7 +155,7 @@ print(q_dist_plot)
 
 ```{r}
 # Combine both grouping variables inside a single group_by statement
-summary_data_2_2 <- data %>%
+summary_data_2 <- data %>%
   group_by(experiment_ID, hybrid_status) %>%
   summarize(
     # mean_q_JA  = mean(JA, na.rm = TRUE),
@@ -251,6 +251,31 @@ print(q_dist_plot_all)
 # Density plot 
 
 ```{r}
+data_zoom_in <- data %>% filter(JC > 0.75) %>% filter(experiment_ID == "5000_loci")
+
+q_density_plot <- ggplot(data_zoom_in, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
+  facet_wrap(~ experiment_ID, ncol = 3) +
+  scale_x_continuous(limits = c(0.75, 1), breaks = seq(0.75, 1, by = 0.05)) +
+  labs(
+    title = "Density Distribution of Q-values Across Experiments",
+    x = "Q-value (1 = JC, 0 = JA)",
+    y = "Density",
+    fill = "Hybrid_status",
+    color = "Hybrid_status"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+print(q_density_plot)
+```
+
+```{r}
 data <- data %>% filter(!(hybrid_status %in% c("JA", "JC")))
 
 # Density plot - Overlaid distributions across experiments per hybrid status
@@ -296,3 +321,4 @@ print(q_density_plot)
 
 print(q_density_plot)
 ```
+

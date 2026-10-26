@@ -1,0 +1,458 @@
+---
+title: "2026_10_HobanLab"
+output: html_document
+---
+
+
+# Data import 
+
+```{r setup}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+# CONFIGURATION --------------- 
+library(knitr)
+library(tidyverse)
+library(stringr)
+
+base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+
+# Test directory 
+list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
+
+data <- data.frame()
+data4 <- read.csv(paste0(base_dir, "data/outputs/experiment_4.csv"))
+data5 <- read.csv(paste0(base_dir, "data/outputs/experiment_5.csv"))
+data6 <- read.csv(paste0(base_dir, "data/outputs/experiment_6.csv"))
+data <- rbind(data, data4)
+data <- rbind(data, data5)
+data <- rbind(data, data6)
+```
+
+# Data manipulation
+
+```{r}
+# 1. Rename Q values 
+data <- data %>% rename(q_value_pop2 = q_value_pop2_JC)
+data <- data %>% rename(q_value_pop1 = q_value_pop1_JA)
+data <- data %>% select(-q_value_pop2) # remove, and then decide if we need to 1-pop or now 
+
+data <- data %>%
+  mutate(
+    hybrid_status = case_when(
+      str_detect(ind_id, "IND") ~ str_split_i(ind_id, "_", 2),
+      str_detect(ind_id, "F1") ~ "F1",
+      str_detect(ind_id, "F2") ~ "F2",
+      str_detect(ind_id, "B2POP1") ~ "B2POP1",
+      str_detect(ind_id, "B2POP2") ~ "B2POP2",
+      str_detect(ind_id, "B3POP1") ~ "B3POP1",
+      str_detect(ind_id, "B3POP2") ~ "B3POP2"
+    )
+  )
+
+# JC_orientation means pop1 == JC? -- doesn't necessary align with the BC2POP1 labels
+data <- data %>%
+  group_by(experiment_ID, bootstrap_ID, run_id) %>%
+  mutate(
+    JC_orientation = mean(
+      q_value_pop1[hybrid_status == "JC"],
+      na.rm = TRUE
+    ) > 0.5,
+    
+    JC = if_else(
+      JC_orientation,
+      q_value_pop1,
+      1 - q_value_pop1
+    )
+  ) %>%
+  ungroup()
+
+# Correct labels 
+data <- data %>% mutate(
+    hybrid_status = case_when(
+      # Known pure individuals
+      str_detect(ind_id, "_JC$") ~ "JC",
+      str_detect(ind_id, "_JA$") ~ "JA",
+      
+      # F1 / F2
+      str_detect(ind_id, "F1") ~ "F1",
+      str_detect(ind_id, "F2") ~ "F2",
+      
+      # B2
+      # JC_orientation = True, means that pop2=JC, pop1=JA
+      str_detect(ind_id, "B2POP1") & JC_orientation ~ "B2_JA",
+      str_detect(ind_id, "B2POP2") & JC_orientation ~ "B2_JC",
+      str_detect(ind_id, "B2POP1") & !JC_orientation ~ "B2_JA",
+      str_detect(ind_id, "B2POP2") & !JC_orientation ~ "B2_JC",
+      
+      # B3
+      str_detect(ind_id, "B3POP1") & JC_orientation ~ "B3_JA",
+      str_detect(ind_id, "B3POP2") & JC_orientation ~ "B3_JC",
+      str_detect(ind_id, "B3POP1") & !JC_orientation ~ "B3_JA",
+      str_detect(ind_id, "B3POP2") & !JC_orientation ~ "B3_JC",
+      
+      TRUE ~ NA_character_
+    )
+)
+```
+
+# Cateogrical 
+```{r}
+# Factor order of the data/categorical variables 
+data <- data %>%
+  mutate(hybrid_status = factor(
+    hybrid_status,
+    levels = c("JA","B3_JA", "B2_JA", "F1", "F2", "B2_JC", "B3_JC", "JC")
+  ))
+
+data <- data %>%
+  mutate(
+    experiment_ID = factor(
+      experiment_ID,
+      levels = c(4, 5, 6),
+      labels = c("500_loci", "1000_loci", "5000_loci")
+    )
+  )
+
+data <- data %>%
+  mutate(
+    bootstrap_ID = factor(bootstrap_ID)
+  )
+
+```
+
+# Simulated hybrid q distributions 
+
+## Just F1
+```{r}
+# Gradient from light blue (JA) to dark navy (JC)
+blue_palette <- c(
+  "JA (Expected)"  = "#A6CEE3",
+  "F1 (Expected)"  = "#6BAED6",
+  "BC2 (Expected)" = "#4292C6",
+  "BC3 (Expected)" = "#2171B5",
+  "JC (Expected)"  = "#08306B"
+)
+
+grid_data <- data.frame(x = seq(0, 1, length.out = 1000)) %>%
+  mutate(
+    # Calculate raw densities
+    JA  = dnorm(x, mean = 0.00, sd = 0.01),
+    F1  = dnorm(x, mean = 0.50, sd = 0.04),
+    JC  = dnorm(x, mean = 1.00, sd = 0.01),
+
+    # Standardize each curve by its own maximum
+    `JA (Expected)`  = JA / max(JA),
+    `F1 (Expected)`  = F1 / max(F1),
+    `JC (Expected)`  = JC / max(JC)
+  ) %>%
+  select(x, ends_with("(Expected)")) %>%
+  pivot_longer(
+    cols = -x,
+    names_to = "hybrid_status",
+    values_to = "density"
+  ) %>%
+  mutate(
+    hybrid_status = factor(
+      hybrid_status,
+      levels = c(
+        "JA (Expected)",
+        "F1 (Expected)",
+        "JC (Expected)"
+      )
+    )
+  )
+
+# Plot standardized curves
+gaussian_density_plot <- ggplot(
+  grid_data,
+  aes(
+    x = x,
+    y = density,
+    fill = hybrid_status,
+    color = hybrid_status
+  )
+) +
+  geom_area(
+    position = "identity",
+    alpha = 0.25,
+    linewidth = 0.8
+  ) +
+  
+  scale_fill_manual(values = blue_palette) +
+  scale_color_manual(values = blue_palette) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1.05),
+    expand = c(0, 0)
+  ) +
+  labs(
+    fill = "Hybrid Status",
+    color = "Hybrid Status",
+    x = "Proportion of JC ancestry (Q)",
+    y = "Standardized density"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+print(gaussian_density_plot)
+
+```
+
+## With backcross 1
+```{r}
+
+# Gradient from light blue (JA) to dark navy (JC)
+blue_palette <- c(
+  "JA (Expected)"  = "#A6CEE3",
+  "F1 (Expected)"  = "#6BAED6",
+  "BC2 (Expected)" = "#4292C6",
+  "BC3 (Expected)" = "#2171B5",
+  "JC (Expected)"  = "#08306B"
+)
+
+grid_data <- data.frame(x = seq(0, 1, length.out = 1000)) %>%
+  mutate(
+    # Calculate raw densities
+    JA  = dnorm(x, mean = 0.00, sd = 0.01),
+    F1  = dnorm(x, mean = 0.50, sd = 0.04),
+    BC2 = dnorm(x, mean = 0.75, sd = 0.06),
+    JC  = dnorm(x, mean = 1.00, sd = 0.01),
+
+    # Standardize each curve by its own maximum
+    `JA (Expected)`  = JA / max(JA),
+    `F1 (Expected)`  = F1 / max(F1),
+    `BC2 (Expected)` = BC2 / max(BC2),
+    `JC (Expected)`  = JC / max(JC)
+  ) %>%
+  select(x, ends_with("(Expected)")) %>%
+  pivot_longer(
+    cols = -x,
+    names_to = "hybrid_status",
+    values_to = "density"
+  ) %>%
+  mutate(
+    hybrid_status = factor(
+      hybrid_status,
+      levels = c(
+        "JA (Expected)",
+        "F1 (Expected)",
+        "BC2 (Expected)",
+        "BC3 (Expected)",
+        "JC (Expected)"
+      )
+    )
+  )
+
+# Plot standardized curves
+gaussian_density_plot <- ggplot(
+  grid_data,
+  aes(
+    x = x,
+    y = density,
+    fill = hybrid_status,
+    color = hybrid_status
+  )
+) +
+  geom_area(
+    position = "identity",
+    alpha = 0.25,
+    linewidth = 0.8
+  ) +
+  
+  scale_fill_manual(values = blue_palette) +
+  scale_color_manual(values = blue_palette) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1.05),
+    expand = c(0, 0)
+  ) +
+  labs(
+    fill = "Hybrid Status",
+    color = "Hybrid Status",
+    x = "Proportion of JC ancestry (Q)",
+    y = "Standardized density"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+print(gaussian_density_plot)
+
+```
+
+
+## With backcross 2
+
+```{r}
+
+# Gradient from light blue (JA) to dark navy (JC)
+blue_palette <- c(
+  "JA (Expected)"  = "#A6CEE3",
+  "F1 (Expected)"  = "#6BAED6",
+  "BC2 (Expected)" = "#4292C6",
+  "BC3 (Expected)" = "#2171B5",
+  "JC (Expected)"  = "#08306B"
+)
+
+grid_data <- data.frame(x = seq(0, 1, length.out = 1000)) %>%
+  mutate(
+    # Calculate raw densities
+    JA  = dnorm(x, mean = 0.00, sd = 0.01),
+    F1  = dnorm(x, mean = 0.50, sd = 0.04),
+    BC2 = dnorm(x, mean = 0.75, sd = 0.06),
+    BC3 = dnorm(x, mean = 0.875, sd = 0.07),
+    JC  = dnorm(x, mean = 1.00, sd = 0.01),
+
+    # Standardize each curve by its own maximum
+    `JA (Expected)`  = JA / max(JA),
+    `F1 (Expected)`  = F1 / max(F1),
+    `BC2 (Expected)` = BC2 / max(BC2),
+    `BC3 (Expected)` = BC3 / max(BC3),
+    `JC (Expected)`  = JC / max(JC)
+  ) %>%
+  select(x, ends_with("(Expected)")) %>%
+  pivot_longer(
+    cols = -x,
+    names_to = "hybrid_status",
+    values_to = "density"
+  ) %>%
+  mutate(
+    hybrid_status = factor(
+      hybrid_status,
+      levels = c(
+        "JA (Expected)",
+        "F1 (Expected)",
+        "BC2 (Expected)",
+        "BC3 (Expected)",
+        "JC (Expected)"
+      )
+    )
+  )
+
+# Plot standardized curves
+gaussian_density_plot <- ggplot(
+  grid_data,
+  aes(
+    x = x,
+    y = density,
+    fill = hybrid_status,
+    color = hybrid_status
+  )
+) +
+  geom_area(
+    position = "identity",
+    alpha = 0.25,
+    linewidth = 0.8
+  ) +
+  
+  scale_fill_manual(values = blue_palette) +
+  scale_color_manual(values = blue_palette) +
+  scale_x_continuous(
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.1)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 1.05),
+    expand = c(0, 0)
+  ) +
+  labs(
+    fill = "Hybrid Status",
+    color = "Hybrid Status",
+    x = "Proportion of JC ancestry (Q)",
+    y = "Standardized density"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+print(gaussian_density_plot)
+
+```
+
+
+
+# Expected even under known overlayed
+
+```{r}
+data_zoom_in <- data %>% 
+  filter(hybrid_status %in% c("JC", "F1", "JA")) %>% 
+  filter(experiment_ID == "5000_loci")
+
+q_density_plot <- ggplot(data_zoom_in, aes(x = JC)) +
+  # Your real data distributions
+  geom_density(aes(fill = hybrid_status, color = hybrid_status, y = after_stat(scaled)), 
+               alpha = 0.35, linewidth = 0.7) +
+  
+  # OVERLAY: Expected/Null distribution centered at 0.5
+  stat_function(
+    fun = dnorm, 
+    args = list(mean = 0.5, sd = 0.08), # Adjust SD to control width
+    aes(color = "Expected (0.5)"),
+    linewidth = 1, 
+    linetype = "dashed"
+  ) +
+  
+  scale_x_continuous(limits = c(0, 1)) + 
+  # Custom color scale to handle both your factors and the manual line label
+  scale_color_manual(values = c("JC" = "#F8766D", "F1" = "#00BA38", "JA" = "#619CFF", "Expected (0.5)" = "black")) +
+  scale_fill_manual(values = c("JC" = "#F8766D", "F1" = "#00BA38", "JA" = "#619CFF")) +
+  
+  labs(
+    title = "Density Distribution of Q-values Across Experiments",
+    x = "Q-value (1 = JC, 0 = JA)",
+    y = "Relative Density",
+    fill = "Hybrid Status",
+    color = "Hybrid Status"
+  ) + 
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+print(q_density_plot)
+
+```
+
+# Density plot - JA, JC, F1
+
+```{r}
+# data_zoom_in <- data %>% filter(JC > 0.75) %>% filter(experiment_ID == "5000_loci")
+data_zoom_in <- data %>% filter(hybrid_status %in% c("JC", "F1", "JA")) %>% filter(experiment_ID == "5000_loci")
+
+q_density_plot <- ggplot(data_zoom_in, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
+  scale_x_continuous(limits = c(0, 1)) + #, breaks = seq(0.75, 1, by = 0.05)) +
+  labs(
+    title = "Density Distribution of Q-values Across Experiments",
+    x = "Q-value (1 = JC, 0 = JA)",
+    y = "Density",
+    fill = "Hybrid_status",
+    color = "Hybrid_status"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+print(q_density_plot)
+```

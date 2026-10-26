@@ -1,0 +1,90 @@
+#
+#   Reads in the Q-values from multiple outputs from STRUCTURE runs 
+#   and summarizes. 
+#
+# example use: https://www.royfrancis.com/pophelper/reference/readQ.html       
+
+
+```{r}
+library(pophelper)
+
+exp_output_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_23_26_k2_k3_pures_dataset"
+str_results_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_23_26_k2_k3_pures_dataset"
+original_structure_input_file <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.str"
+
+figure_output_path <- "/work/williarj/williarj/2627_HJH_Thesis/scripts/r_analysis/Figures"
+
+# Working directory is the folder running the script from:
+print(getwd())
+
+# Get the sort_q_manual function
+source("scripts/data_conversion/sort_q_manual.R")
+
+# Get the run files
+sfiles <- list.files(str_results_folder, full.names = TRUE)
+run_files <- sfiles[grepl("_f$", basename(sfiles))] # get only run files
+print(run_files)
+```
+
+# K=2
+
+```{r}
+# Read the runs and automatically extract the individual labels
+q_list <- readQ(files = run_files[1], filetype="structure", indlabfromfile = TRUE)
+slist <- as.qlist(q_list)                                        
+slist <- alignK(slist)  
+
+# Summarize basic information in the structure files
+table <- tabulateQ(slist, sorttable = TRUE, writetable = FALSE, exportpath = NULL)
+summary <- summariseQ(table)
+print(summary)
+
+number_of_runs=length(slist)
+
+# Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples 
+plotQ(
+  qlist = slist[1],
+  sortind = "all",
+  sharedindlab = FALSE,
+  exportpath = figure_output_path, 
+  outputfilename = "k3_small_squashed",
+  
+  # --- Add these arguments to show individual names ---
+  showindlab = TRUE,       # Enables display of individual labels
+  useindlab = TRUE,        # Uses labels from the dataframe rownames (extracted from file)
+  width = 30,              # Expands width so names have room (adjust based on sample size)
+  basesize = 3            # Increases font size slightly for readability
+)
+```
+
+# k=3
+
+```{r}
+# Read the runs and automatically extract the individual labels
+q_list <- readQ(files = run_files[2], filetype="structure", indlabfromfile = TRUE)
+slist <- as.qlist(q_list)                                        
+slist <- alignK(slist)  
+
+# Summarize basic information in the structure files
+table <- tabulateQ(slist, sorttable = TRUE, writetable = FALSE, exportpath = NULL)
+summary <- summariseQ(table)
+print(summary)
+
+number_of_runs=length(slist)
+
+# Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples 
+plotQ(
+  qlist = slist[1],
+  sortind = "all",
+  sharedindlab = FALSE,
+  exportpath = figure_output_path, 
+  outputfilename = "k3_small_squashed",
+  
+  # --- Add these arguments to show individual names ---
+  showindlab = TRUE,       # Enables display of individual labels
+  useindlab = TRUE,        # Uses labels from the dataframe rownames (extracted from file)
+  width = 30,              # Expands width so names have room (adjust based on sample size)
+  basesize = 3            # Increases font size slightly for readability
+)
+
+```
