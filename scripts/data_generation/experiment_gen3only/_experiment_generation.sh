@@ -1,0 +1,76 @@
+# ----------------------------- Configurations
+BASE_DIR="/work/williarj/williarj/2627_HJH_Thesis"            
+DATA_LOC="$BASE_DIR/data"
+RAW_DATA_LOC="$DATA_LOC/raw_input"
+SCRIPT_LOC="$BASE_DIR/scripts"
+
+EXP_ID=$1
+
+EXP_DATASET="$DATA_LOC/all_experiments_09_08.csv"
+RAW_DATASET="$DATA_LOC/raw_input_data_08_15.csv"
+EXP_FOLDER="$DATA_LOC/generated_input/experiment_${EXP_ID}"
+
+mkdir -p "$EXP_FOLDER"
+
+LOG_FILE="$EXP_FOLDER/exp_log.txt"
+
+# -----------------
+# 1. With EXP_ID retrieve relevant experiment data 
+#        Reads: Seperate columns in EXP_DATASET with a comma. Column 1 ($1), Column 2 ($2), 
+#               and so forth. 
+#               
+#               Using the interval variable 'id', if column 1's ($1) value is equal to this
+#               id, return this entire row to variable.
+EXP_ROW=$(awk -F',' -v id="$EXP_ID" '$1 == id {print $0; exit}' "$EXP_DATASET")
+
+if [[ -z "$EXP_ROW" ]]; then
+    echo "Error: Experiment ID $EXP_ID not found in $EXP_DATASET" >> $LOG_FILE
+    exit 1
+fi
+
+# -----------------
+# 2. Parse CSV fields into variables 
+# Set internal delimitor character to ','; then read will seperate by ','
+IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
+        vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
+
+echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> $LOG_FILE
+
+# -----------------
+# 3. Retrieve dataset file from dataset_id
+RAW_DATASET_ROW=$(awk -F',' -v id="$dataset_id" '$1 == id {print $0; exit}' "$RAW_DATASET")
+
+if [[ -z "$EXP_ROW" ]]; then
+    echo "Error: Dataset ID $dataset_id not found in $RAW_DATASET_ROW" >> $LOG_FILE
+    exit 1
+fi
+
+IFS=',' read -r dataset_id data_folder_name primary_input_file \
+                    JC_IDS_list_file JA_IDS_list_file \
+                    owner_sharer num_ids num_total_loci description <<< "$RAW_DATASET_ROW"
+
+DATASET_LOC="$RAW_DATA_LOC/$data_folder_name"
+DATASET_FILE="$DATASET_LOC/$primary_input_file"   # Full input path to VCF
+JC_IDS_list_file="$DATASET_LOC/$JC_IDS_list_file" # Full input path to JC IDS list file
+JA_IDS_list_file="$DATASET_LOC/$JA_IDS_list_file" # Full input path to JA IDS list file
+
+echo "Loaded dataset file for experiment $EXP_ID --> $DATASET_FILE" >> $LOG_FILE
+
+# -----------------
+# 4. Generate bootstraps 
+echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh" >> $LOG_FILE
+"$SCRIPT_LOC/data_generation/generate_all_bootstraps_for_exp.sh" \
+    $EXP_FOLDER \
+    $DATASET_FILE \
+    $num_bootstraps \
+    $JC_IDS_list_file \
+    $JA_IDS_list_file \
+    $num_JC_inds \
+    $num_JA_inds \
+    $num_F1 \
+    $num_BC1 \
+    $num_BC2 \
+    $vary_JC_pop \
+    $vary_JA_pop \
+    $num_loci \
+    $vary_loci >> $LOG_FILE 2>&1
