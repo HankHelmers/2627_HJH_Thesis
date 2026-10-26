@@ -4,3 +4,9 @@
 *.hist
 .Rproj.user
 PCA*
+experiments/10_23_26_multiple_ks/k2_small_f
+experiments/10_23_26_multiple_ks/k3_small_f
+experiments/10_23_26_multiple_ks/STR_log_run_large_k2.txt
+experiments/10_23_26_multiple_ks/STR_log_run_large_k3.txt
+experiments/10_23_26_multiple_ks/STR_log_run_small_k2.txt
+experiments/10_23_26_multiple_ks/STR_log_run_small_k3.txt
