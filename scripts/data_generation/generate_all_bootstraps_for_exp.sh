@@ -15,210 +15,211 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 EXP_FOLDER=$1 
 raw_data_file_loc=$2 # INPUT VCF
 num_bootstraps=$3
+selection_proc=$4
 
 JC_IDS_list_file=$4  # List of possible JC ids to subset from
 JA_IDS_list_file=$5  # List of possible JA ids to subset from
 num_JC_inds=$6       # Number of JC to sample
 num_JA_inds=$7       # Number of JA to sample
-num_F1=$8
-num_BC1=$9 
-num_BC2=${10}
-vary_JC_pop=${11} 
-vary_JA_pop=${12} 
+num_gens=$8
+num_hybrids_per_gen=$9 
+vary_JC_pop=${10} 
+vary_JA_pop=${11} 
 
-num_loci=${13}
-vary_loci=${14}
+num_loci=${12}
+vary_loci=${13}
 
 echo "Loaded Experiment Data -- Generating $num_bootstraps bootstraps..."
 
 echo "=== Input Argument Check ==="
-echo "EXP_FOLDER:         ${1}"
-echo "raw_data_file_loc:  ${2}"
-echo "num_bootstraps:     ${3}"
-echo "JC_IDS_list_file:   ${4}"
-echo "JA_IDS_list_file:   ${5}"
-echo "num_JC_inds:        ${6}"
-echo "num_JA_inds:        ${7}"
-echo "num_F1:             ${8}"
-echo "num_BC1:            ${9}"
-echo "num_BC2:            ${10}"
-echo "vary_JC_pop:        ${11}"
-echo "vary_JA_pop:        ${12}"
-echo "num_loci:           ${13}"
-echo "vary_loci:          ${14}"
+echo "EXP_FOLDER:           ${1}"
+echo "raw_data_file_loc:    ${2}"
+echo "num_bootstraps:       ${3}"
+echo "selection_proc:       ${4}"
+echo "JC_IDS_list_file:     ${5}"
+echo "JA_IDS_list_file:     ${6}"
+echo "num_JC_inds:          ${7}"
+echo "num_JA_inds:          ${8}"
+echo "num_gens:             ${9}"
+echo "num_hybrids_per_gen:  ${10}"
+echo "vary_JC_pop:          ${11}"
+echo "vary_JA_pop:          ${12}"
+echo "num_loci:             ${13}"
+echo "vary_loci:            ${14}"
 
-# Create experiment log file 
-LOG_FILE="$EXP_FOLDER/boot_gen_log.txt"
-# est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
-# echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
+
+# # Create experiment log file 
+# LOG_FILE="$EXP_FOLDER/boot_gen_log.txt"
+# # est_operation_time=$(awk -v b="$num_bootstraps" -v l="$num_loci" -v j="$num_JC_inds" 'BEGIN {print (b * l * j * 0.005) / 60}')
+# # echo "Estimated time: $est_operation_time min = $number_boostraps bootstraps * $num_loc loci * $($num_JC_inds * 8) inds * 0.005 sec" > $LOG_FILE # reset log file if needed
    
-total_time=0 # Tracking total time exp gen takes 
-batch_size=5
+# total_time=0 # Tracking total time exp gen takes 
+# batch_size=5
 
-bootstrap_ids() {
-    # Access the passed parameter via $1 instead of boot_num
-    local boot_num=$1
+# bootstrap_ids() {
+#     # Access the passed parameter via $1 instead of boot_num
+#     local boot_num=$1
 
-    # Stagger execution slightly to prevent file system metadata race conditions
-    sleep $((boot_num % 5))
+#     # Stagger execution slightly to prevent file system metadata race conditions
+#     sleep $((boot_num % 5))
 
-    # For log
-    echo "-------------------------------------" >> $LOG_FILE
-    echo "Starting boot $boot_num generation..." >> $LOG_FILE
-    local start=$(date +%s%3N)
+#     # For log
+#     echo "-------------------------------------" >> $LOG_FILE
+#     echo "Starting boot $boot_num generation..." >> $LOG_FILE
+#     local start=$(date +%s%3N)
 
-    # 0. Generate folders with structure
-    #  /boot_{i}       - parent folder for this bootstrap
-    #       /vcf     - folder of all generated vcfs
-    #       /genepop - folder for the generated genepop
-    #       /str     - folder for the structure files
-    #       ind_ids.txt  -  .txts for that boot's 
-    #       loci_ids.txt - above but loci 
-    echo "-------------------------------"
+#     # 0. Generate folders with structure
+#     #  /boot_{i}       - parent folder for this bootstrap
+#     #       /vcf     - folder of all generated vcfs
+#     #       /genepop - folder for the generated genepop
+#     #       /str     - folder for the structure files
+#     #       ind_ids.txt  -  .txts for that boot's 
+#     #       loci_ids.txt - above but loci 
+#     echo "-------------------------------"
 
-    local CURR_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-    local CURR_VCF_FOLDER="$CURR_BOOT_FOLDER/vcf"
-    local CURR_GENEPOP_FOLDER="$CURR_BOOT_FOLDER/genepop"
-    local CURR_STR_FOLDER="$CURR_BOOT_FOLDER/str"
-    mkdir -p "$CURR_BOOT_FOLDER"
-    mkdir -p "$CURR_VCF_FOLDER"
-    mkdir -p "$CURR_GENEPOP_FOLDER"
-    mkdir -p "$CURR_STR_FOLDER"
+#     local CURR_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#     local CURR_VCF_FOLDER="$CURR_BOOT_FOLDER/vcf"
+#     local CURR_GENEPOP_FOLDER="$CURR_BOOT_FOLDER/genepop"
+#     local CURR_STR_FOLDER="$CURR_BOOT_FOLDER/str"
+#     mkdir -p "$CURR_BOOT_FOLDER"
+#     mkdir -p "$CURR_VCF_FOLDER"
+#     mkdir -p "$CURR_GENEPOP_FOLDER"
+#     mkdir -p "$CURR_STR_FOLDER"
 
-    local BOOT_LOG_FILE="$CURR_BOOT_FOLDER/boot_log$boot_num"
-    echo "" $BOOT_LOG_FILE 
+#     local BOOT_LOG_FILE="$CURR_BOOT_FOLDER/boot_log$boot_num"
+#     echo "" $BOOT_LOG_FILE 
 
-    # Create ID files
-    local curr_JC_ids_file="$CURR_BOOT_FOLDER/JC_ids.txt"
-    > "$curr_JC_ids_file"
-    local curr_JA_ids_file="$CURR_BOOT_FOLDER/JA_ids.txt"
-    > "$curr_JA_ids_file"
-    local curr_loci_id_file="$CURR_BOOT_FOLDER/loci_ids.txt"
-    > "$curr_loci_id_file"
+#     # Create ID files
+#     local curr_JC_ids_file="$CURR_BOOT_FOLDER/JC_ids.txt"
+#     > "$curr_JC_ids_file"
+#     local curr_JA_ids_file="$CURR_BOOT_FOLDER/JA_ids.txt"
+#     > "$curr_JA_ids_file"
+#     local curr_loci_id_file="$CURR_BOOT_FOLDER/loci_ids.txt"
+#     > "$curr_loci_id_file"
     
-    # -------------------------------------
-    # Prepare the inds_ids.txt and loc_ids.txt to 
-    # go into generate_bootstrap_with
+#     # -------------------------------------
+#     # Prepare the inds_ids.txt and loc_ids.txt to 
+#     # go into generate_bootstrap_with
 
-    # -------------------------------------
-    # 1. Individuals
-    # Get random subset of num_JC_inds, num_JA_inds from
-    # JC_IDS_list_file JA_IDS_list_file
+#     # -------------------------------------
+#     # 1. Individuals
+#     # Get random subset of num_JC_inds, num_JA_inds from
+#     # JC_IDS_list_file JA_IDS_list_file
 
-    # We want to re-sample JC individuals IF 
-    # 1. vary_JC_pop is TRUE (1), always run
-    # 2. Otherwise, need to sample at least once at the first boot
-    echo "Bootstrap #$boot_num"
-    if [ "$vary_JC_pop" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
-        echo "Re-sample JC"
+#     # We want to re-sample JC individuals IF 
+#     # 1. vary_JC_pop is TRUE (1), always run
+#     # 2. Otherwise, need to sample at least once at the first boot
+#     echo "Bootstrap #$boot_num"
+#     if [ "$vary_JC_pop" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
+#         echo "Re-sample JC"
         
-        # Select random lines from JC/A_sample_names.txt 
-        # * -r is VERY important as its sampling with replacement!
-        shuf -r -n $num_JC_inds $JC_IDS_list_file | cut -f1,2 >> $curr_JC_ids_file
-    else 
-        # Copy current id list from BOOT1
-        echo "Same JC sample as boot1"
-        cat "$EXP_FOLDER/boot1/JC_ids.txt" >> $curr_JC_ids_file
-    fi
+#         # Select random lines from JC/A_sample_names.txt 
+#         # * -r is VERY important as its sampling with replacement!
+#         shuf -r -n $num_JC_inds $JC_IDS_list_file | cut -f1,2 >> $curr_JC_ids_file
+#     else 
+#         # Copy current id list from BOOT1
+#         echo "Same JC sample as boot1"
+#         cat "$EXP_FOLDER/boot1/JC_ids.txt" >> $curr_JC_ids_file
+#     fi
 
-    # Same for specified JA sampling
-    if [ "$vary_JA_pop" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
-        echo "Re-sample JA"
+#     # Same for specified JA sampling
+#     if [ "$vary_JA_pop" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
+#         echo "Re-sample JA"
 
-        # Select random lines from JC/A_sample_names.txt 
-        # * -r is VERY important as its sampling with replacement!
-        shuf -r -n $num_JA_inds $JA_IDS_list_file | cut -f1,2 >> $curr_JA_ids_file
-    else 
-        # Copy current id list from BOOT1
-        echo "Same JA sample as boot1"
-        cat "$EXP_FOLDER/boot1/JA_ids.txt" >> $curr_JA_ids_file
-    fi
+#         # Select random lines from JC/A_sample_names.txt 
+#         # * -r is VERY important as its sampling with replacement!
+#         shuf -r -n $num_JA_inds $JA_IDS_list_file | cut -f1,2 >> $curr_JA_ids_file
+#     else 
+#         # Copy current id list from BOOT1
+#         echo "Same JA sample as boot1"
+#         cat "$EXP_FOLDER/boot1/JA_ids.txt" >> $curr_JA_ids_file
+#     fi
 
-    # -------------------------------------
-    # 2. Loci
-    # Get random subset of num_loci from raw_data_file_loc's list of loci
-    if [ "$vary_loci" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
-        echo "Re-sample loci"
+#     # -------------------------------------
+#     # 2. Loci
+#     # Get random subset of num_loci from raw_data_file_loc's list of loci
+#     if [ "$vary_loci" -eq 1 ] || [ "$boot_num" -eq 1 ]; then
+#         echo "Re-sample loci"
 
-        bcftools view -H  $raw_data_file_loc | shuf -n $num_loci \
-                | cut -f1,2 > $curr_loci_id_file
-    else 
-        # Copy current id list from BOOT1
-        echo "Same JA sample as boot1"
-        cat "$EXP_FOLDER/boot1/loci_ids.txt" >> $curr_loci_id_file
-    fi
+#         bcftools view -H  $raw_data_file_loc | shuf -n $num_loci \
+#                 | cut -f1,2 > $curr_loci_id_file
+#     else 
+#         # Copy current id list from BOOT1
+#         echo "Same JA sample as boot1"
+#         cat "$EXP_FOLDER/boot1/loci_ids.txt" >> $curr_loci_id_file
+#     fi
 
-    local elapsed=$(($(date +%s%3N) - start))
-    local minutes=$((elapsed / 60000))
-    local seconds=$(((elapsed % 60000) / 1000))
-    local total_time=$(($total_time + $elapsed))
-    echo "Run $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
+#     local elapsed=$(($(date +%s%3N) - start))
+#     local minutes=$((elapsed / 60000))
+#     local seconds=$(((elapsed % 60000) / 1000))
+#     local total_time=$(($total_time + $elapsed))
+#     echo "Run $boot_num completed in ${minutes} min ${seconds} sec" >> $LOG_FILE
 
-}
+# }
 
-# NOTE: HAVE TO GENERATE FIRST AS THE REST REQUIRE IT
-bootstrap_ids 1
+# # NOTE: HAVE TO GENERATE FIRST AS THE REST REQUIRE IT
+# bootstrap_ids 1
 
-echo "Starting generation: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+# echo "Starting generation: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
 
-# Run in sequence
-for ((boot_num=2; boot_num<=$num_bootstraps; boot_num++)); do
-    LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-    LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
+# # Run in sequence
+# for ((boot_num=2; boot_num<=$num_bootstraps; boot_num++)); do
+#     LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#     LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
 
-    bootstrap_ids "$boot_num"
-done
+#     bootstrap_ids "$boot_num"
+# done
 
-for ((boot_num=1; boot_num<=$num_bootstraps; boot_num++)); do
-    LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-    LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
+# for ((boot_num=1; boot_num<=$num_bootstraps; boot_num++)); do
+#     LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#     LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
 
-    # Generate the new VCFs with the bootstrapped ids
-    "$SCRIPT_LOC/data_generation/subset_vcf_with_boot_ids.sh" \
-        $LOCAL_BOOT_FOLDER \
-        $boot_num \
-        $num_JC_inds \
-        $num_JA_inds \
-        $num_F1 \
-        $num_BC1 \
-        $num_BC2 \
-        $num_loci \
-        $raw_data_file_loc  >> $LOCAL_LOG_FILE
-done
+#     # Generate the new VCFs with the bootstrapped ids
+#     "$SCRIPT_LOC/data_generation/subset_vcf_with_boot_ids.sh" \
+#         $LOCAL_BOOT_FOLDER \
+#         $boot_num \
+#         $num_JC_inds \
+#         $num_JA_inds \
+#         $num_F1 \
+#         $num_BC1 \
+#         $num_BC2 \
+#         $num_loci \
+#         $raw_data_file_loc  >> $LOCAL_LOG_FILE
+# done
 
-echo "Bootstrap batch VCF-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+# echo "Bootstrap batch VCF-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
 
-# Then run the long generation task in parallel
-# Generate the new VCFs with the bootstrapped ids
-for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+# # Then run the long generation task in parallel
+# # Generate the new VCFs with the bootstrapped ids
+# for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
 
-    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-    # Start up to 5 bootstrap jobs
+#     echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+#     # Start up to 5 bootstrap jobs
     
-    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-        LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-        LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
+#     for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
+#         LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+#         LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
         
-        "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
-            $LOCAL_BOOT_FOLDER \
-            $boot_num \
-            $num_JC_inds \
-            $num_JA_inds \
-            $num_F1 \
-            $num_BC1 \
-            $num_BC2 \
-            $num_loci \
-            $raw_data_file_loc  >> $LOCAL_LOG_FILE &
-    done 
+#         "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
+#             $LOCAL_BOOT_FOLDER \
+#             $boot_num \
+#             $num_JC_inds \
+#             $num_JA_inds \
+#             $num_F1 \
+#             $num_BC1 \
+#             $num_BC2 \
+#             $num_loci \
+#             $raw_data_file_loc  >> $LOCAL_LOG_FILE &
+#     done 
 
-    # wait for all jobs in this batch to finish
-    wait
-    echo "Bootstrap batch simulation and file-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-done
+#     # wait for all jobs in this batch to finish
+#     wait
+#     echo "Bootstrap batch simulation and file-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+# done
 
 
-echo "-----------------------------" >> $LOG_FILE
-echo "Bootstrap generation complete" >> $LOG_FILE
-minutes=$((total_time / 60000))
-seconds=$(((total_time % 60000) / 1000))
-echo "Total generation time took ${minutes} min ${seconds} sec" >> $LOG_FILE
+# echo "-----------------------------" >> $LOG_FILE
+# echo "Bootstrap generation complete" >> $LOG_FILE
+# minutes=$((total_time / 60000))
+# seconds=$(((total_time % 60000) / 1000))
+# echo "Total generation time took ${minutes} min ${seconds} sec" >> $LOG_FILE

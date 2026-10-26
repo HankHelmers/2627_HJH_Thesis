@@ -6,7 +6,7 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 
 EXP_ID=$1
 
-EXP_DATASET="$DATA_LOC/all_experiments_09_08.csv"
+EXP_DATASET="$DATA_LOC/all_experiments_10_26_26.csv"
 RAW_DATASET="$DATA_LOC/raw_input_data_08_15.csv"
 EXP_FOLDER="$DATA_LOC/generated_input/experiment_${EXP_ID}"
 
@@ -31,7 +31,7 @@ fi
 # -----------------
 # 2. Parse CSV fields into variables 
 # Set internal delimitor character to ','; then read will seperate by ','
-IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
+IFS=',' read -r experiment_id name dataset_id num_bootstraps selection_proc num_JC_inds num_JA_inds num_gens num_hybrids_per_gen \
         vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
 echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> $LOG_FILE
@@ -63,13 +63,13 @@ echo "Calling bootstrap generation: $SCRIPT_LOC/data_generation/generate_all_boo
     $EXP_FOLDER \
     $DATASET_FILE \
     $num_bootstraps \
+    $selection_proc \
     $JC_IDS_list_file \
     $JA_IDS_list_file \
     $num_JC_inds \
     $num_JA_inds \
-    $num_F1 \
-    $num_BC1 \
-    $num_BC2 \
+    $num_gens \
+    $num_hybrids_per_gen \
     $vary_JC_pop \
     $vary_JA_pop \
     $num_loci \
