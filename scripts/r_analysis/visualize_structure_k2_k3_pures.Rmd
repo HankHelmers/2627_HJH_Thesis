@@ -4,21 +4,24 @@
 #
 # example use: https://www.royfrancis.com/pophelper/reference/readQ.html       
 
-
 ```{r}
 library(pophelper)
 
+# PURES
 exp_output_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_23_26_k2_k3_pures_dataset"
 str_results_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_23_26_k2_k3_pures_dataset"
 original_structure_input_file <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.str"
 
+# WILD HYBRIDS
+exp_output_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_26_26_k2_k3_hybrids_dataset"
+str_results_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_26_26_k2_k3_hybrids_dataset"
+original_structure_input_file <-"/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/prepared_with_hybrids.str"
+
 figure_output_path <- "/work/williarj/williarj/2627_HJH_Thesis/scripts/r_analysis/Figures"
+figure_name <- "with_wild_hybrids"
 
 # Working directory is the folder running the script from:
 print(getwd())
-
-# Get the sort_q_manual function
-source("scripts/data_conversion/sort_q_manual.R")
 
 # Get the run files
 sfiles <- list.files(str_results_folder, full.names = TRUE)
@@ -27,7 +30,6 @@ print(run_files)
 ```
 
 # K=2
-
 ```{r}
 # Read the runs and automatically extract the individual labels
 q_list <- readQ(files = run_files[1], filetype="structure", indlabfromfile = TRUE)
@@ -47,7 +49,7 @@ plotQ(
   sortind = "all",
   sharedindlab = FALSE,
   exportpath = figure_output_path, 
-  outputfilename = "k3_small_squashed",
+  outputfilename = paste0("k2_",figure_name),
   
   # --- Add these arguments to show individual names ---
   showindlab = TRUE,       # Enables display of individual labels
@@ -78,7 +80,7 @@ plotQ(
   sortind = "all",
   sharedindlab = FALSE,
   exportpath = figure_output_path, 
-  outputfilename = "k3_small_squashed",
+  outputfilename = paste0("k3_",figure_name),
   
   # --- Add these arguments to show individual names ---
   showindlab = TRUE,       # Enables display of individual labels

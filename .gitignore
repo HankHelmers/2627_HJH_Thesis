@@ -1,6 +1,7 @@
 /archive/
 /data/
 /experiment_outputs/
+*_f
 *.hist
 .Rproj.user
 PCA*

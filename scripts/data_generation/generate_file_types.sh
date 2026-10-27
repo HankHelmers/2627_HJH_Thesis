@@ -43,28 +43,7 @@ echo "num_BC2:            ${num_BC2}"
 echo "num_loci:           ${num_loci}"
 echo "RAW_VCF:            ${RAW_VCF}"
 
-# ----------------------------------
-# Convert VCF to genepop
-"$SCRIPT_LOC/data_generation/bootstrap_to_genepop.sh" \
-    $BOOT_FOLDER/genepop \
-    $FINAL_VCF \
-    $FINAL_GENEPOP
-
-# Programmatically add "Pop" above the JC and JA populations
-#  - Keep the first twp lines the same
-{
-  head -n 2 "$FINAL_GENEPOP"
-  tail -n +3 "$FINAL_GENEPOP" | sort -t'_' -k2,2 | awk '{
-      if (!seen && $0 ~ /_JC/) {
-          print "POP"
-          seen = 1
-      }
-      print
-  }'
-} > "$BOOT_FOLDER/genepop/sorted.gen"
-
-# Replace the final genepop with the sorted
-mv "$BOOT_FOLDER/genepop/sorted.gen" "$FINAL_GENEPOP"
+# TO GENEPOP MOVED
 
 # ----------------------------------
 # Generate hybrids 

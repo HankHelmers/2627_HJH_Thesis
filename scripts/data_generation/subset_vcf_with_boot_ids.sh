@@ -9,37 +9,40 @@ BOOTSTRAP_LOC_FILE="$DATA_LOC/all_bootstrap_locations.csv" # File where bootstra
 # Get the input files 
 BOOT_FOLDER=$1
 BOOT_NUM=$2        # Which bootstrap are we on
+selection_proc=$3
+
 JC_IDS_list_file="$BOOT_FOLDER/JC_ids.txt"  # List of possible JC ids to subset from
 JA_IDS_list_file="$BOOT_FOLDER/JA_ids.txt"  # List of possible JA ids to subset from
+
 loci_ID_file="$BOOT_FOLDER/loci_ids.txt"
 all_ID_list_file="$BOOT_FOLDER/combined_JC_JA_ids.txt"
 FINAL_VCF="$BOOT_FOLDER/vcf/boot${BOOT_NUM}_combined_JC_JA.vcf.gz"
 FINAL_GENEPOP="$BOOT_FOLDER/genepop/$(basename $FINAL_VCF .vcf.gz).gen"
-num_JC_inds=$3       # Number of JC to sample
-num_JA_inds=$4       # Number of JA to sample
-num_F1=$5
-num_BC1=$6 
-num_BC2=$7
+
+num_JC_inds=$4       # Number of JC to sample
+num_JA_inds=$5       # Number of JA to sample
+num_gens=$6
+num_hybrids_per_gen=$7
 num_loci=$8
 RAW_VCF=$9
 
 echo "=== Input Argument Check ==="
-echo "BOOT_FOLDER:        $BOOT_FOLDER"
-echo "BOOT_NUM:        $BOOT_NUM"
-echo "JC_IDS_list_file:   ${JC_IDS_list_file}"
-echo "JA_IDS_list_file:   ${JA_IDS_list_file}"
-echo "loci_ID_file:       ${loci_ID_file}"
-echo "num_JC_inds:        ${num_JC_inds}"
-echo "num_JA_inds:        ${num_JA_inds}"
-echo "num_F1:             ${num_F1}"
-echo "num_BC1:            ${num_BC1}"
-echo "num_BC2:            ${num_BC2}"
-echo "num_loci:           ${num_loci}"
-echo "RAW_VCF:            ${RAW_VCF}"
+echo "BOOT_FOLDER:         $BOOT_FOLDER"
+echo "BOOT_NUM:            $BOOT_NUM"
+echo "selection_proc:      $selection_proc"
+echo "JC_IDS_list_file:    $JC_IDS_list_file"
+echo "JA_IDS_list_file:    $JA_IDS_list_file"
+echo "loci_ID_file:        $loci_ID_file"
+echo "all_ID_list_file:    $all_ID_list_file"
+echo "FINAL_VCF:           $FINAL_VCF"
+echo "FINAL_GENEPOP:       $FINAL_GENEPOP"
+echo "num_JC_inds:         $num_JC_inds"
+echo "num_JA_inds:         $num_JA_inds"
+echo "num_gens:            $num_gens"
+echo "num_hybrids_per_gen: $num_hybrids_per_gen"
+echo "num_loci:            $num_loci"
+echo "RAW_VCF:             $RAW_VCF"
 
-# ==============================================================================
-# SECTION 4: DYNAMIC MULTI-LAYER DUPLICATE PROCESSING
-# ==============================================================================
 
 # 1. Combine raw bootstrapped IDs (which contain arbitrary duplicates)
 cat "$JC_IDS_list_file" "$JA_IDS_list_file" > "$BOOT_FOLDER/raw_combined_ids.txt"
@@ -78,7 +81,6 @@ for layer_file in "$BOOT_FOLDER"/layer_*.txt; do
     vcf_merge_list+=("$layer_vcf")
 done
 
-
 # 4. Merge all layers back together to build the true duplicate-inflated VCF
 # --force-samples automatically appends suffixes (e.g., ID-1, ID-2) to duplicates
 bcftools merge \
@@ -98,8 +100,9 @@ rm -f "$BOOT_FOLDER"/vcf/layer_*.vcf.gz.csi
 rm -f "$BOOT_FOLDER/raw_combined_ids.txt"
 
 
+# Not needed for now
 # # ==============================================================================
-# # SECTION 5: TRACK SUBGROUPS FROM INFLATED VCF
+# # SECTION 5: TRACK SUBGROUPS (JC & JA individually) FROM INFLATED VCF
 # # ==============================================================================
 
 # # Query the final merged VCF to see the exact sample names (including suffixes)
