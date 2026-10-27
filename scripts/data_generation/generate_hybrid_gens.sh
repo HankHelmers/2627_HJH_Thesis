@@ -98,6 +98,10 @@ awk -v IGNORECASE=1 '
 ' "$GEN1_RAW" > "$GEN1_OUT"
 rm $GEN1_RAW
 
+Rscript $SCRIPT_LOC/data_generation/append_hybrids_to_final.R \
+    "$ALL_HYBRIDS_FILE" \
+    "$GEN1_OUT" 
+
 # 2. Loop through subsequent advanced backcrosses / generations
 # If user asked for more than 1 generation, start iterative crossing
 if [ "$num_gens" -gt 1 ]; then
@@ -138,16 +142,14 @@ if [ "$num_gens" -gt 1 ]; then
             "$gen"
 
         # Add new hybrids to total genepop
-        Rscript $SCRIPT_LOC/data_generation/append_hybrids_to_final.R.R \
-            "$ALL_HYBRIDS" \
+        Rscript $SCRIPT_LOC/data_generation/append_hybrids_to_final.R \
+            "$ALL_HYBRIDS_FILE" \
             "$CURRENT_GEN_FINAL" 
     done
 fi
 
-
-
 ## Clean up structural temporary workspace layout directories
-## rm -rf "$BOOT_FOLDER/tmp"
+rm -rf "$BOOT_FOLDER/tmp"
 
 echo "All backcrossed populations output compiled to: $ALL_HYBRIDS_FILE"
 echo "================================="

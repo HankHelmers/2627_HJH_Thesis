@@ -10,17 +10,17 @@ if (length(args) < 3) {
 }
 
 # FOR TESTING 
-BOOT_FOLDER <- "/work/williarj/williarj/2627_HJH_Thesis/data/generated_input/experiment_0/boot1"
-CURRENT_GEN_RAW=paste0(BOOT_FOLDER, "/tmp/gen_2_raw.gen")
-CURRENT_GEN_FINAL=paste0(BOOT_FOLDER, "/genepop/gen_2_hybrids.gen")
+# BOOT_FOLDER <- "/work/williarj/williarj/2627_HJH_Thesis/data/generated_input/experiment_0/boot1"
+# CURRENT_GEN_RAW=paste0(BOOT_FOLDER, "/tmp/gen_2_raw.gen")
+# CURRENT_GEN_FINAL=paste0(BOOT_FOLDER, "/genepop/gen_2_hybrids.gen")
+# 
+# input_path   <- CURRENT_GEN_RAW # newly generated hyb gen output, RAW
+# output_path  <- CURRENT_GEN_FINAL # final processed path
+# bc_number    <- 1 # which backcross it is
 
-input_path   <- CURRENT_GEN_RAW # newly generated hyb gen output, RAW
-output_path  <- CURRENT_GEN_FINAL # final processed path
-bc_number    <- 1 # which backcross it is
-
-# input_path   <- args[1] # newly generated hyb gen output, RAW
-# output_path  <- args[2] # final processed path
-# bc_number    <- args[3] # which backcross it is
+input_path   <- args[1] # newly generated hyb gen output, RAW
+output_path  <- args[2] # final processed path
+bc_number    <- args[3] # which backcross it is
 
 replacement_label <- paste0("BC", bc_number, "HYB_")
 

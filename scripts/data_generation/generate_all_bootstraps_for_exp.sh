@@ -254,31 +254,31 @@ done
 # --------------------------------- DEP FOR NOW
 # Then run the long generation task in parallel
 # Generate the new file types (STR, Genepop) with the bootstrapped ids
-# for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
+for ((batch_start=1; batch_start<=num_bootstraps; batch_start+=batch_size)); do
 
-#     echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-#     # Start up to 5 bootstrap jobs
+    echo "Starting bootstrap batch: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+    # Start up to 5 bootstrap jobs
     
-#     for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
-#         LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
-#         LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
+    for ((boot_num=batch_start; boot_num<=batch_start + batch_size - 1 && boot_num<=num_bootstraps; boot_num++)); do
+        LOCAL_BOOT_FOLDER="$EXP_FOLDER/boot$boot_num"
+        LOCAL_LOG_FILE="$LOCAL_BOOT_FOLDER/boot_log$boot_num"
         
-#         "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
-#             $LOCAL_BOOT_FOLDER \
-#             $boot_num \
-#             $num_JC_inds \
-#             $num_JA_inds \
-#             $num_F1 \
-#             $num_BC1 \
-#             $num_BC2 \
-#             $num_loci \
-#             $raw_data_file_loc  >> $LOCAL_LOG_FILE &
-#     done 
+        "$SCRIPT_LOC/data_generation/generate_file_types.sh" \
+            $LOCAL_BOOT_FOLDER \
+            $boot_num \
+            $selection_proc \
+            $num_JC_inds \
+            $num_JA_inds \
+            $num_gens \
+            $num_hybrids_per_gen \
+            $num_loci \
+            $raw_data_file_loc  >> $LOCAL_LOG_FILE &
+    done 
 
-#     # wait for all jobs in this batch to finish
-#     wait
-#     echo "Bootstrap batch simulation and file-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
-# done
+    # wait for all jobs in this batch to finish
+    wait
+    echo "Bootstrap batch simulation and file-generation completed: $batch_start-$((batch_start + batch_size - 1))" >> "$LOG_FILE"
+done
 
 
 echo "-----------------------------" >> $LOG_FILE

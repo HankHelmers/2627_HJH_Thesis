@@ -14,7 +14,7 @@ SCRIPT_LOC="$BASE_DIR/scripts"
 # Inputs
 EXP_ID=$1
 EXP_FOLDER="$DATA_LOC/generated_input/experiment_${EXP_ID}"
-EXP_DATASET="$DATA_LOC/all_experiments_09_08.csv"
+EXP_DATASET="$DATA_LOC/all_experiments_10_26_26.csv"
 RAW_DATASET="$DATA_LOC/raw_input_data_08_15.csv"
 
 MAIN_PARAMS_LOC="$SCRIPT_LOC/data_analysis/template_structure_mainparams.txt"
@@ -41,11 +41,32 @@ fi
 
 # -----------------
 # 2. Parse CSV fields into variables 
-IFS=',' read -r experiment_id dataset_id num_bootstraps num_JC_inds num_JA_inds num_F1 num_BC1 num_BC2 \
+IFS=',' read -r experiment_id name dataset_id num_bootstraps selection_proc num_JC_inds num_JA_inds num_gens num_hybrids_per_gen \
         vary_JC_pop vary_JA_pop num_loci vary_loci str_burnin str_runlength str_runrepeats description purpose question <<< "$EXP_ROW"
 
+echo "=== Input Argument Check ===" >> $LOG_FILE
+echo "experiment_id:       $experiment_id" >> $LOG_FILE
+echo "name:                $name" >> $LOG_FILE
+echo "dataset_id:          $dataset_id" >> $LOG_FILE
+echo "num_bootstraps:      $num_bootstraps" >> $LOG_FILE
+echo "selection_proc:      $selection_proc" >> $LOG_FILE
+echo "num_JC_inds:         $num_JC_inds" >> $LOG_FILE
+echo "num_JA_inds:         $num_JA_inds" >> $LOG_FILE
+echo "num_gens:            $num_gens" >> $LOG_FILE
+echo "num_hybrids_per_gen: $num_hybrids_per_gen" >> $LOG_FILE
+echo "vary_JC_pop:         $vary_JC_pop" >> $LOG_FILE
+echo "vary_JA_pop:         $vary_JA_pop" >> $LOG_FILE
+echo "num_loci:            $num_loci" >> $LOG_FILE
+echo "vary_loci:           $vary_loci" >> $LOG_FILE
+echo "str_burnin:          $str_burnin" >> $LOG_FILE
+echo "str_runlength:       $str_runlength" >> $LOG_FILE
+echo "str_runrepeats:      $str_runrepeats" >> $LOG_FILE
+echo "description:         $description" >> $LOG_FILE
+echo "purpose:             $purpose" >> $LOG_FILE
+echo "question:            $question" >> $LOG_FILE
+
 # 3. Clean inputs 
-TOTAL_NUM_INDS=$(( num_JC_inds + num_JA_inds + $num_F1 * 6))
+TOTAL_NUM_INDS=$(( num_JC_inds + num_JA_inds + $num_hybrids_per_gen * $num_gens))
 
 echo "Loaded Experiment $EXP_ID -> Dataset ID: $dataset_id" >> "$LOG_FILE"
 
