@@ -124,7 +124,7 @@ retrieve_q_from_exp <- function(exp_id) {
   write.csv(csv_data, file = output_csv_path, row.names = FALSE)
 }
 
-retrieve_q_from_exp(3)
+retrieve_q_from_exp(6)
 
 
 

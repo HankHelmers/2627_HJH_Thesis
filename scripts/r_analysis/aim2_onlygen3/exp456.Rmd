@@ -18,9 +18,9 @@ base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
 
 data <- data.frame()
-data4 <- read.csv(paste0(base_dir, "data/outputs/experiment_4.csv"))
-data5 <- read.csv(paste0(base_dir, "data/outputs/experiment_5.csv"))
-data6 <- read.csv(paste0(base_dir, "data/outputs/experiment_6.csv"))
+data4 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_4.csv"))
+data5 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_5.csv"))
+data6 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_6.csv"))
 data <- rbind(data, data4)
 data <- rbind(data, data5)
 data <- rbind(data, data6)
@@ -252,12 +252,13 @@ print(q_dist_plot_all)
 
 ```{r}
 data_zoom_in <- data %>% filter(JC > 0.75) %>% filter(experiment_ID == "5000_loci")
+#data_zoom_in <- data %>% filter(hybrid_status %in% c("JA", "F1", "B1_JC", "B2_JC", "B3_JC", "JC"))
 
 q_density_plot <- ggplot(data_zoom_in, 
                          aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
   geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
   facet_wrap(~ experiment_ID, ncol = 3) +
-  scale_x_continuous(limits = c(0.75, 1), breaks = seq(0.75, 1, by = 0.05)) +
+  #scale_x_continuous(limits = c(0.75, 1), breaks = seq(0.75, 1, by = 0.05)) +
   labs(
     title = "Density Distribution of Q-values Across Experiments",
     x = "Q-value (1 = JC, 0 = JA)",
@@ -276,10 +277,10 @@ print(q_density_plot)
 ```
 
 ```{r}
-data <- data %>% filter(!(hybrid_status %in% c("JA", "JC")))
+data_zoom_in <- data %>% filter(!(hybrid_status %in% c("JA", "JC")))
 
 # Density plot - Overlaid distributions across experiments per hybrid status
-q_density_plot <- ggplot(data, 
+q_density_plot <- ggplot(data_zoom_in, 
                          aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
   geom_density(alpha = 0.35, linewidth = 0.7) +
   facet_wrap(~ experiment_ID, ncol = 3) +

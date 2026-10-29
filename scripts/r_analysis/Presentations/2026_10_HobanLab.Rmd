@@ -19,9 +19,9 @@ base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
 
 data <- data.frame()
-data4 <- read.csv(paste0(base_dir, "data/outputs/experiment_4.csv"))
-data5 <- read.csv(paste0(base_dir, "data/outputs/experiment_5.csv"))
-data6 <- read.csv(paste0(base_dir, "data/outputs/experiment_6.csv"))
+data4 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_4.csv"))
+data5 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_5.csv"))
+data6 <- read.csv(paste0(base_dir, "data/outputs/aim2_onlygen3/experiment_6.csv"))
 data <- rbind(data, data4)
 data <- rbind(data, data5)
 data <- rbind(data, data6)
@@ -193,7 +193,7 @@ gaussian_density_plot <- ggplot(
     x = "Proportion of JC ancestry (Q)",
     y = "Standardized density"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal()  +
   theme(
     legend.position = "right",
     panel.grid.minor = element_blank(),
