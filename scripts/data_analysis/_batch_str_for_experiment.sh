@@ -4,7 +4,8 @@
 #SBATCH --output=batch_result_%j.log      # Saves standard output (%j automatically inserts Job ID)
 #SBATCH --nodes=1                   # Number of nodes requested
 #SBATCH --ntasks-per-node=1         # Number of tasks per node
-#SBATCH --cpus-per-task=120          # Number of CPU cores requested
+#SBATCH --cpus-per-task=20          # Number of CPU cores requested
+#SBATCH --mem-per-cpu=4G            # Requests 2 GB of RAM per CPU core (240 GB total)
 #SBATCH --time=24:00:00             # Walltime limit (HH:MM:SS) - keeps queue moving
 #SBATCH --mail-type=END                       # Event(s) that triggers email notification (BEGIN,END,FAIL,ALL)
 #SBATCH --mail-user=helmerhj@rose-hulman.edu      # Destination email address

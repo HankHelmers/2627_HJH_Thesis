@@ -14,12 +14,13 @@ base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
 
 data <- data.frame()
-data1 <- read.csv(paste0(base_dir, "data/outputs/experiment_1.csv"))
-#data2 <- read.csv(paste0(base_dir, "data/outputs/experiment_2.csv"))
-#data3 <- read.csv(paste0(base_dir, "data/outputs/experiment_3.csv"))
-data <- rbind(data, data1)
-#data <- rbind(data, data2)
-#data <- rbind(data, data3)
+data7 <- read.csv(paste0(base_dir, "data/outputs/experiment_7.csv"))
+data8 <- read.csv(paste0(base_dir, "data/outputs/experiment_8.csv"))
+data9 <- read.csv(paste0(base_dir, "data/outputs/experiment_9.csv"))
+data <- rbind(data, data7)
+data <- rbind(data, data8)
+data <- rbind(data, data9)
+rm(data7, data8, data9)
 ```
 
 # Data manipulation
@@ -37,7 +38,8 @@ data <- data %>%
       str_detect(ind_id, "BC3HYB") ~ "BC2HYB",
       str_detect(ind_id, "BC4HYB") ~ "BC3HYB",
       str_detect(ind_id, "BC5HYB") ~ "BC4HYB",
-      str_detect(ind_id, "BC6HYB") ~ "BC5HYB"
+      str_detect(ind_id, "BC6HYB") ~ "BC5HYB",
+      str_detect(ind_id, "BC7HYB") ~ "BC6HYB"
     )
   )
 
@@ -93,17 +95,17 @@ data <- data %>%
 data <- data %>%
   mutate(hybrid_status = factor(
     hybrid_status,
-    levels = c("JA", "F1", "BC1HYB", "BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "JC")
+    levels = c("JA", "F1", "BC1HYB", "BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "BC6HYB", "JC")
   ))
 
-data <- data %>%
-  mutate(
-    experiment_ID = factor(
-      experiment_ID,
-      levels = c(1), #, 2, 3),
-      labels = c("on_all"), #, "on_JC", "on_JA")
-    )
-  )
+# data <- data %>%
+#   mutate(
+#     experiment_ID = factor(
+#       experiment_ID,
+#       levels = c(6), #, 2, 3),
+#       labels = c("on_all"), #, "on_JC", "on_JA")
+#     )
+#   )
 
 data <- data %>%
   mutate(
@@ -162,17 +164,61 @@ multi_class_matrices <- tidyr::expand_grid(
   mutate(
     Overall_Accuracy = (TP + TN) / (TP + TN + FP + FN),
     Accuracy = if_else((TP + FP) > 0, TP / (TP + FP), 0),
-    Efficiency = if_else((TP + FN) > 0, TP / (TP + FN), 0)
+    Efficiency = if_else((TP + FN) > 0, TP / (TP + FN), 0),
+    Preformance = Accuracy * Efficiency
   )
 
 # View the result summary table
 summary_data <- multi_class_matrices %>% group_by(hybrid_status, threshold) %>% summarize(Overall_Accuracy, Accuracy, Efficiency, .groups="drop")
+```
 
-potential_thresholds <- summary_data %>%
-  filter(Efficiency == 1) %>%
+# Summarize threshold possibilities
+```{r}
+
+# Minimum threshold maximizing Efficiency
+efficiency_thresholds <- summary_data %>%
   group_by(hybrid_status) %>%
-  filter(threshold == min(threshold, na.rm = TRUE)) %>%
-  ungroup()
+  filter(threshold <= 0.999) %>%
+  filter(Efficiency == max(Efficiency, na.rm = TRUE)) %>%
+  slice_min(threshold, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(hybrid_status, threshold, Efficiency) %>%
+  rename(Efficiency_threshold = threshold)
+
+# Minimum threshold maximizing Accuracy
+accuracy_thresholds <- summary_data %>%
+  group_by(hybrid_status) %>%
+  filter(threshold <= 0.999) %>%
+  filter(Accuracy == max(Accuracy, na.rm = TRUE)) %>%
+  slice_min(threshold, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(hybrid_status, threshold, Accuracy) %>%
+  rename(Accuracy_threshold = threshold)
+
+# Minimum thresholds maximizing Preformance
+summary_data <- summary_data %>% mutate(Preformance = (Accuracy * Efficiency))
+preformance_thresholds <- summary_data %>%
+  group_by(hybrid_status) %>%
+  filter(threshold <= 0.999) %>%
+  filter(Preformance == max(Preformance, na.rm = TRUE)) %>%
+  slice_min(threshold, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(hybrid_status, threshold, Preformance) %>%
+  rename(Preformance_threshold = threshold)
+
+# Combine into one table
+potential_thresholds <- efficiency_thresholds %>%
+  full_join(accuracy_thresholds, by = "hybrid_status") %>%
+  full_join(preformance_thresholds, by = "hybrid_status")
+
+potential_thresholds <- potential_thresholds %>% mutate(
+  num_loci = "Random 5000"
+)
+
+output_csv_path <- file.path(paste0(base_dir, "data/outputs/summary_thresholds_by_metric.csv"))
+write.csv(potential_thresholds, file = output_csv_path, row.names = FALSE)
+
+rm(accuracy_thresholds, efficiency_thresholds, preformance_thresholds)
 ```
 
 # Plotting threshold acc, eff, pref
@@ -183,7 +229,7 @@ accuracy_plot <- ggplot(multi_class_matrices, aes(x = threshold, y = Accuracy, c
   geom_line(linewidth = 1.1) +
   geom_point(size = 2) +
   scale_y_continuous(labels = scales::percent_format(Overall_Accuracy = 1), limits = c(0, 1)) +
-  scale_x_continuous(breaks = seq(bottom_threshold, top_threshold, by = 0.02)) +
+  scale_x_continuous(breaks = seq(bottom_threshold, top_threshold, by = 0.05)) +
   labs(
     #itle = "Identification Threshold vs. Overall_Accuracy by Hybrid Class",
     # subtitle = "Comparing performance curves across all hybrid populations on a single plot",
@@ -205,7 +251,7 @@ efficiency_plot <- ggplot(multi_class_matrices, aes(x = threshold, y = Efficienc
   geom_line(linewidth = 1.1) +
   geom_point(size = 2) +
   scale_y_continuous(labels = scales::percent_format(Overall_Accuracy = 1), limits = c(0, 1)) +
-  scale_x_continuous(breaks = seq(bottom_threshold, top_threshold, by = 0.02)) +
+  scale_x_continuous(breaks = seq(bottom_threshold, top_threshold, by = 0.05)) +
   labs(
     #itle = "Identification Threshold vs. Overall_Accuracy by Hybrid Class",
     # subtitle = "Comparing performance curves across all hybrid populations on a single plot",
@@ -223,10 +269,11 @@ efficiency_plot <- ggplot(multi_class_matrices, aes(x = threshold, y = Efficienc
   )
 efficiency_plot
 
-preformance_plot <- ggplot(multi_class_matrices, aes(x = threshold, y = (Accuracy * Efficiency), color = hybrid_status, linetype = hybrid_status)) +
+#multi_class_matrices_small <- multi_class_matrices %>% filter(hybrid_status %in% c("BC4HYB"))
+preformance_plot <- ggplot(multi_class_matrices, aes(x = threshold, y = Preformance, color = hybrid_status, linetype = hybrid_status)) +
   geom_line(linewidth = 1.1) +
   geom_point(size = 2) +
-  scale_y_continuous(labels = scales::percent_format(Overall_Accuracy = 1), limits = c(0, 1)) +
+  scale_y_continuous(labels = scales::percent_format(Preformance = 1), limits = c(0, 1)) +
   scale_x_continuous(breaks = seq(bottom_threshold, top_threshold, by = 0.02)) +
   labs(
     #itle = "Identification Threshold vs. Overall_Accuracy by Hybrid Class",
@@ -254,39 +301,39 @@ accuracy_plot
 
 # including threshold lines
 ```{r}
-potential_thresholds <- summary_data %>%
-  filter(Efficiency == 1) %>%
-  group_by(hybrid_status) %>%
-  filter(threshold == min(threshold, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(min_threshold = threshold)
+# BC6s dont have a threshold at 1
+# potential_thresholds <- summary_data %>%
+#   filter(Overall_Accuracy == 1) %>%
+#   group_by(hybrid_status) %>%
+#   filter(threshold == min(threshold, na.rm = TRUE)) %>%
+#   ungroup() %>%
+#   mutate(min_threshold = threshold)
 
 # Rename the hybrid classes with their thresholds 
 multi_class_matrices_intermediate <- multi_class_matrices %>%
   left_join(
     potential_thresholds %>%
-      select(hybrid_status, min_threshold),
+      select(hybrid_status, Preformance_threshold),
     by = "hybrid_status"
   ) %>%
   mutate(
     hybrid_status = paste0(
-      hybrid_status, " (", round(min_threshold, 3), ")"
+      hybrid_status, " (", round(Preformance_threshold, 3), ")"
     )
-  ) %>%
-  select(-min_threshold)
+  ) 
 
 # Rename the hybrids with their thresholds 
 potential_thresholds <- potential_thresholds %>% mutate(
-    hybrid_status = paste0(hybrid_status, " (", round(min_threshold, 3), ")")
+    hybrid_status = paste0(hybrid_status, " (", round(Preformance_threshold, 3), ")")
   ) 
 
 # SELECT HYBRIDS and THRESHOLDS WE WANT TO INCLUDE
-multi_class_matrices_intermediate <- multi_class_matrices_intermediate %>% filter(str_detect(hybrid_status, "BC1HYB"))
-potential_thresholds <- potential_thresholds %>% filter(str_detect(hybrid_status, "BC1HYB"))
+multi_class_matrices_intermediate <- multi_class_matrices_intermediate %>% filter(str_detect(hybrid_status, "BC5HYB"))
+potential_thresholds <- potential_thresholds %>% filter(str_detect(hybrid_status, "BC5HYB"))
 
 plot <- ggplot(
   multi_class_matrices_intermediate,
-  aes(x = threshold, y = Efficiency, color = hybrid_status, linetype = hybrid_status)
+  aes(x = threshold, y = Accuracy, color =hybrid_status, linetype = hybrid_status)
 ) +
   geom_line(linewidth = 1.1) +
   geom_point(size = 2) +
@@ -310,7 +357,7 @@ plot <- ggplot(
   ) +
   labs(
     x = "Identification Threshold",
-    y = "Efficiency",
+    y = "Accuracy",
     color = "Hybrid Class",
     linetype = "Hybrid Class"
   ) +
@@ -319,6 +366,143 @@ plot <- ggplot(
     plot.title = element_text(face = "bold", hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5),
     legend.position = "right",
+    panel.grid.minor = element_blank()
+  )
+
+plot
+```
+
+```{r}
+plot <- ggplot(
+  multi_class_matrices_intermediate,
+  aes(
+    x = threshold,
+    y = Overall_Accuracy,
+    linetype = hybrid_status
+  )
+) +
+  # Vertical lines for minimum thresholds
+  geom_vline(
+    data = potential_thresholds,
+    aes(
+      xintercept = threshold,
+      color = hybrid_status,
+      linetype = hybrid_status
+    ),
+    linewidth = 0.8,
+    alpha = 0.8,
+    inherit.aes = FALSE
+  ) +
+  # Accuracy curves
+  geom_line(
+    color = "#ABAD18",
+    linewidth = 1.1
+  ) +
+  geom_point(
+    color = "#ABAD18",
+    size = 2
+  ) +
+  # Colors for threshold lines
+  scale_color_manual(
+    values = c(
+      "BC2HYB (0.908)" = "#ABAD18"
+    ),
+    name = "Hybrid Class"
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(),
+    limits = c(0, 1)
+  ) +
+  scale_x_continuous(
+    breaks = seq(bottom_threshold, top_threshold, by = 0.02)
+  ) +
+  labs(
+    x = "Identification Threshold",
+    y = "Overall Accuracy",
+    linetype = "Hybrid Class"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.position = "right"
+  )
+
+plot
+
+```
+
+```{r}
+potential_thresholds <- summary_data %>%
+  group_by(hybrid_status) %>%
+  slice_max(
+    order_by = Overall_Accuracy,
+    n = 3,
+    with_ties = FALSE
+  ) %>%
+  ungroup() %>%
+  arrange(hybrid_status, desc(Overall_Accuracy), desc(threshold)) %>%
+  mutate(selected_threshold = threshold)
+
+# Keep all accuracy curves
+multi_class_matrices_intermediate <- multi_class_matrices
+
+# Select only the hybrid class you want to plot
+multi_class_matrices_intermediate <- multi_class_matrices_intermediate %>%
+  filter(hybrid_status == "BC5HYB")
+
+potential_thresholds <- potential_thresholds %>%
+  filter(hybrid_status == "BC5HYB")
+
+plot <- ggplot(
+  multi_class_matrices_intermediate,
+  aes(
+    x = threshold,
+    y = Overall_Accuracy
+  )
+) +
+  # Overall accuracy curve
+  geom_line(
+    color = "#ABAD18",
+    linewidth = 1.1
+  ) +
+  geom_point(
+    color = "#ABAD18",
+    size = 1.5
+  ) +
+  # Three selected threshold lines
+  # geom_vline(
+  #   data = potential_thresholds,
+  #   aes(xintercept = selected_threshold),
+  #   color = "#264653",
+  #   linetype = "dashed",
+  #   linewidth = 0.8,
+  #   alpha = 0.8
+  # ) +
+  # Mark the selected points on the curve
+  geom_point(
+    data = potential_thresholds,
+    aes(
+      x = selected_threshold,
+      y = Overall_Accuracy
+    ),
+    color = "#264653",
+    size = 3
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(),
+    limits = c(0, 1)
+  ) +
+  scale_x_continuous(
+    breaks = seq(bottom_threshold, top_threshold, by = 0.02)
+  ) +
+  labs(
+    x = "Identification Threshold",
+    y = "Overall Accuracy"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
     panel.grid.minor = element_blank()
   )
 

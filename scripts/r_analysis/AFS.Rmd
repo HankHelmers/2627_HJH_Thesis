@@ -1,0 +1,629 @@
+---
+title: "AFS"
+output: html_document
+---
+
+```{r}
+library(vcfR)
+library(adegenet)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(cowplot)
+
+# File path to save plots
+photo_path <- "/work/williarj/williarj/2627_HJH_Thesis/scripts/r_analysis/Figures"
+
+no_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf"
+with_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/renamed_samples.vcf"
+
+#vcf <- read.vcfR(with_hybrids_vcf)
+vcf <- read.vcfR(no_hybrids_vcf)
+my_genlight <- vcfR2genlight(vcf)
+af_all <- glMean(my_genlight) / 2  # Computes allele frequency for genlight objects
+```
+
+# Pi
+```{r}
+library(dartR)
+
+# Compute genetic diversity indices across your populations
+diversity_results <- gl.report.diversity(my_genlight)
+
+library(GenoPop)
+
+total_seq_len <- 66834 # Total sequence length in base pairs
+
+# Batch mode (whole sequence pi)
+pi_value <- Pi(vcf_file, seq_length = total_seq_len)
+
+# Window mode
+pi_windows <- Pi(vcf_file, 
+                 seq_length = total_seq_len, 
+                 window_size = 1000, 
+                 skip_size = 1000)
+```
+
+# With all LOCI
+```{r}
+no_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf"
+#with_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/renamed_samples.vcf"
+
+#vcf <- read.vcfR(with_hybrids_vcf)
+vcf <- read.vcfR(no_hybrids_vcf)
+my_genlight <- vcfR2genlight(vcf)
+```
+
+## JC
+```{r}
+# Find indices of individuals with '_JC' in their names
+jc_indices <- grep("_JC", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+jc_genlight <- my_genlight[jc_indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af_jc <- adegenet::glMean(jc_genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af_jc)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "JC Site Frequency Spectrum (SFS)",
+    subtitle = "bins by 40; 66,834 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) + scale_x_continuous(
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.1),
+    expand = c(0.05, 0)
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "jc_afs_all_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## JA
+```{r}
+# Find indices of individuals with '_JC' in their names
+ja_indices <- grep("_JA", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+ja_genlight <- my_genlight[ja_indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af_ja <- adegenet::glMean(ja_genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af_ja)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "orange", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "JA Site Frequency Spectrum (SFS)",
+    subtitle = "bins by 40; 66,834 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) + scale_x_continuous(
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.1),
+    expand = c(0.05, 0)
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "ja_afs_all_loci.png"), 
+  plot = plot,
+      width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## JC, by ind
+```{r}
+# Identify JC individuals
+jc_indices <- grep("_JC", indNames(my_genlight))
+
+# Subset genlight object
+jc_genlight <- my_genlight[jc_indices, ]
+
+# Extract genotype matrix
+geno <- as.matrix(jc_genlight)
+
+# Convert to allele frequency
+geno_freq <- geno / 2
+
+# Calculate population AF for each locus
+population_af <- colMeans(geno_freq, na.rm = TRUE)
+
+# Create bins matching the original 40-bin histogram
+breaks <- seq(0, 1, length.out = 41)
+
+# Assign each locus to a bin
+bin_id <- cut(
+  population_af,
+  breaks = breaks,
+  include.lowest = TRUE,
+  labels = FALSE
+)
+
+# Calculate individual contributions per bin
+hist_data <- lapply(seq_len(nrow(geno_freq)), function(i) {
+
+  # Count individual genotype contributions by population AF bin
+  counts <- tabulate(
+    bin_id[!is.na(geno_freq[i, ]) & !is.na(bin_id)],
+    nbins = 40
+  )
+
+  data.frame(
+    Individual = indNames(jc_genlight)[i],
+    Bin = seq_len(40),
+    Count = counts
+  )
+}) %>%
+  bind_rows()
+
+# Calculate bin midpoints
+hist_data <- hist_data %>%
+  mutate(
+    AF = (breaks[Bin] + breaks[Bin + 1]) / 2
+  )
+
+main_plot <- ggplot(
+  hist_data,
+  aes(x = AF, y = Count, fill = Individual)
+) +
+  geom_col(
+    width = 1 / 40,
+    position = "stack"
+  ) +
+  theme_classic() +
+  labs(
+    title = "JC Population SFS by Individual Contribution",
+    x = "Population Allele Frequency",
+    y = "Locus Count",
+    fill = "Individual"
+  )
+
+# Extract legend
+plot_legend <- get_legend(main_plot)
+
+# Remove legend
+main_plot_no_legend <- main_plot +
+  theme(legend.position = "none")
+
+# Display
+main_plot_no_legend
+
+# Save
+ggsave(
+  filename = file.path(photo_path, "jc_afs_by_individual.png"),
+  plot = main_plot_no_legend,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  filename = file.path(photo_path, "jc_ind_legend.png"), 
+  plot = ggdraw(plot_legend)
+)
+```
+
+
+## JA, by ind
+```{r}
+# Identify JC individuals
+indices <- grep("_JA", indNames(my_genlight))
+
+# Subset genlight object
+genlight <- my_genlight[indices, ]
+
+# Extract genotype matrix
+geno <- as.matrix(genlight)
+
+# Convert to allele frequency
+geno_freq <- geno / 2
+
+# Calculate population AF for each locus
+population_af <- colMeans(geno_freq, na.rm = TRUE)
+
+# Create bins matching the original 40-bin histogram
+breaks <- seq(0, 1, length.out = 41)
+
+# Assign each locus to a bin
+bin_id <- cut(
+  population_af,
+  breaks = breaks,
+  include.lowest = TRUE,
+  labels = FALSE
+)
+
+# Calculate individual contributions per bin
+hist_data <- lapply(seq_len(nrow(geno_freq)), function(i) {
+
+  # Count individual genotype contributions by population AF bin
+  counts <- tabulate(
+    bin_id[!is.na(geno_freq[i, ]) & !is.na(bin_id)],
+    nbins = 40
+  )
+
+  data.frame(
+    Individual = indNames(jc_genlight)[i],
+    Bin = seq_len(40),
+    Count = counts
+  )
+}) %>%
+  bind_rows()
+
+# Calculate bin midpoints
+hist_data <- hist_data %>%
+  mutate(
+    AF = (breaks[Bin] + breaks[Bin + 1]) / 2
+  )
+
+main_plot <- ggplot(
+  hist_data,
+  aes(x = AF, y = Count, fill = Individual)
+) +
+  geom_col(
+    width = 1 / 40,
+    position = "stack"
+  ) +
+  theme_classic() +
+  labs(
+    title = "JA Population SFS by Individual Contribution",
+    x = "Population Allele Frequency",
+    y = "Locus Count",
+    fill = "Individual"
+  )
+
+# Extract legend
+plot_legend <- get_legend(main_plot)
+
+# Remove legend
+main_plot_no_legend <- main_plot +
+  theme(legend.position = "none")
+
+# Display
+main_plot_no_legend
+
+# Save
+ggsave(
+  filename = file.path(photo_path, "ja_afs_by_individual.png"),
+  plot = main_plot_no_legend,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  filename = file.path(photo_path, "ja_ind_legend.png"), 
+  plot = ggdraw(plot_legend)
+)
+```
+
+
+
+# With hybrid dataset 
+```{r}
+with_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/renamed_samples.vcf"
+
+vcf <- read.vcfR(with_hybrids_vcf)
+my_genlight <- vcfR2genlight(vcf)
+```
+
+## JCs
+```{r}
+# Find indices of individuals with '_JC' in their names
+jc_indices <- grep("_JC", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+jc_genlight <- my_genlight[jc_indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af_jc <- adegenet::glMean(jc_genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af_jc)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "JC Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 8927 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "jc_afs_subset_used_in_hybrid_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## JAs
+```{r}
+# Find indices of individuals with '_JC' in their names
+ja_indices <- grep("_JA", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+ja_genlight <- my_genlight[ja_indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af_ja <- adegenet::glMean(ja_genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data_ja <- data.frame(AF = af_ja)
+
+# Create the plot
+plot <- ggplot(sfs_data_ja, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "orange", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "JA Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 8927 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "ja_afs_subset_used_in_hybrid_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## F1s
+```{r}
+# Find indices of individuals with '_JC' in their names
+indices <- grep("_F1", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+genlight <- my_genlight[indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af <- adegenet::glMean(genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "F1 Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 8927 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "f1_afs_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## BCs
+```{r}
+# Find indices of individuals with '_JC' in their names
+indices <- grep("_BC", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+genlight <- my_genlight[indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af <- adegenet::glMean(genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "BCs Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 8927 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "bcs_afs_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+# Simulated 
+```{r}
+sim_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/generated_input/experiment_9/boot1/vcf/with_hybrids.vcf.gz"
+vcf_sim <- read.vcfR(sim_hybrids_vcf)
+genlight_sim <- vcfR2genlight(vcf_sim)
+```
+
+## Subsetting the same loci in simulation to verify
+```{r}
+# Parent dataset
+no_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf"
+vcf_parent <- read.vcfR(no_hybrids_vcf)
+
+# Grab the same loci from the simulated vc
+```
+
+## JC parents
+```{r}
+# Find indices of individuals with '_JC' in their names
+indices <- grep("_JC", adegenet::indNames(genlight_sim))
+
+# Subset the genlight object
+genlight <- my_genlight[indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af <- adegenet::glMean(genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "JC parents to simulations: Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 5000 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "sim_JC_parents_afs_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+
+
+
+
+## JA parents
+```{r}
+# Find indices of individuals with '_JC' in their names
+indices <- grep("_JA", adegenet::indNames(genlight_sim))
+
+# Subset the genlight object
+genlight <- my_genlight[indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af <- adegenet::glMean(genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "Parent JAs in simulations: Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 5000 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "sim_JA_parents_afs_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
+
+## F1s
+```{r}
+# Find indices of individuals with '_JC' in their names
+indices <- grep("F1HYB_", adegenet::indNames(genlight_sim))
+
+# Subset the genlight object
+genlight <- my_genlight[indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af <- adegenet::glMean(genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af)
+
+# Create the plot
+plot <- ggplot(sfs_data, aes(x = AF)) +
+  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+  theme_classic() + # Cleans up background gridlines
+  labs(
+    title = "Simulated F1 Site Frequency Spectrum (SFS)",
+    subtitle = "Individuals; bins by 40; 5000 loci",
+    x = "Allele Frequency",
+    y = "Locus Count"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.title = element_text(size = 12)
+  )
+plot 
+
+ggsave(
+  filename = file.path(photo_path, "sim_f1_afs_loci.png"), 
+  plot = plot,
+    width = 10,
+  height = 6,
+  dpi = 300
+)
+```
