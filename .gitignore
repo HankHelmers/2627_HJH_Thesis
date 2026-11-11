@@ -3,9 +3,9 @@
 /experiment_outputs/
 *_f
 *.hist
-.Rproj.user
-.out
-.log
+*.Rproj.user
+*.out
+*.log
 PCA*
 experiments/10_23_26_multiple_ks/k2_small_f
 experiments/10_23_26_multiple_ks/k3_small_f

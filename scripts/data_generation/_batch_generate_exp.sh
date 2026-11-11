@@ -5,7 +5,7 @@
 #SBATCH --nodes=1                   # Number of nodes requested
 #SBATCH --ntasks-per-node=1         # Number of tasks per node
 #SBATCH --cpus-per-task=120          # Number of CPU cores requested
-#SBATCH --time=12:00:00             # Walltime limit (HH:MM:SS) - keeps queue moving
+#SBATCH --time=24:00:00             # Walltime limit (HH:MM:SS) - keeps queue moving
 #SBATCH --mail-type=END                       # Event(s) that triggers email notification (BEGIN,END,FAIL,ALL)
 #SBATCH --mail-user=helmerhj@rose-hulman.edu      # Destination email address
 

@@ -1,0 +1,261 @@
+---
+title: "AFS_standardized"
+output: html_document
+---
+
+# Datasets
+```{r}
+wd <- "/work/williarj/williarj/2627_HJH_Thesis"
+
+with_hybrids_vcf <- paste0(wd,"/data/raw_input/Ebrahimi_5_20_2026_prepared/renamed_samples.vcf")
+
+sim_hybrids_vcf <- paste0(wd,"/data/generated_input/experiment_13/boot1/vcf/with_hybrids.vcf.gz")
+```
+
+# Extracting AFs from VCF
+
+```{r}
+#' Extract Allele Frequency Data from Genlight Object
+#' 
+#' @param genlight_obj A genlight object containing your genotypes.
+#' @param target_patterns A named list or character vector of regex patterns to match individual names (e.g., c(JC="_JC", JA="_JA", F1="F1HYB_")).
+#' @param dataset_label An optional string identifier to tag this dataset if comparing multiple datasets together.
+#' @return A data frame containing allele frequencies, assigned groups, and dataset labels.
+extract_afs_data <- function(genlight_obj, target_patterns, dataset_label = "Dataset1") {
+  library(adegenet)
+  library(dplyr)
+  
+  all_data <- list()
+  
+  for (group_name in names(target_patterns)) {
+    pattern <- target_patterns[[group_name]]
+    
+    # 1. Match indices for your target cohort
+    indices <- grep(pattern, adegenet::indNames(genlight_obj))
+    
+    if (length(indices) == 0) {
+      warning(paste("No individuals matched pattern:", pattern, "for group:", group_name))
+      next
+    }
+    
+    # 2. Subset group and calculate allele frequency
+    sub_gl <- genlight_obj[indices, ]
+    af_vals <- adegenet::glMean(sub_gl)
+    
+    # 3. Compile clean dataframe
+    group_df <- data.frame(
+      AF = af_vals,
+      Group = group_name,
+      Dataset = dataset_label,
+      stringsAsFactors = FALSE
+    )
+    
+    all_data[[paste0(dataset_label, "_", group_name)]] <- group_df
+  }
+  
+  bind_rows(all_data)
+}
+```
+
+# Plotting
+
+```{r}
+#' General Plotting Function for Allele Frequency Spectra
+#' 
+#' @param afs_data A dataframe output from extract_afs_data() or a combination of them via bind_rows().
+#' @param fold Logical. If TRUE, folds the spectrum at 0.5 to calculate Minor Allele Frequency (MAF).
+#' @param color_by The column name to map to the fill aesthetic (e.g., "Group" or "Dataset").
+#' @param title Custom character string for the plot title.
+#' @param subtitle Custom character string for the plot subtitle (e.g., "66,834 loci").
+#' @param bins Integer. Number of histogram bins. Default is 40.
+#' @param filter_fixed Logical. If TRUE, filters out fixed alleles (0 and 1).
+#' @return A ggplot object.
+plot_afs <- function(afs_data, fold = TRUE, color_by = "Group", 
+                     title = "Site Frequency Spectrum", subtitle = NULL, 
+                     bins = 40, filter_fixed = FALSE) {
+  library(ggplot2)
+  library(dplyr)
+  
+  plot_df <- afs_data
+  
+  # 1. Option to drop fixed site artifacts
+  if (filter_fixed) {
+    plot_df <- plot_df %>% filter(AF > 0 & AF < 1)
+  }
+  
+  # 2. Process Folding Choice
+  if (fold) {
+    plot_df <- plot_df %>% 
+      mutate(X_Val = ifelse(AF > 0.5, 1 - AF, AF))
+    x_label <- "Allele Frequency"
+    x_limits <- c(0, 0.5)
+  } else {
+    plot_df <- plot_df %>% mutate(X_Val = AF)
+    x_label <- "Allele Frequency"
+    x_limits <- c(0, 1)
+  }
+  
+  # 3. Base plot with safe dynamic evaluation of fill aesthetic
+  p <- ggplot(plot_df, aes(x = X_Val, fill = .data[[color_by]])) +
+    geom_histogram(
+      # Standardizes proportions within each unique group/dataset configuration
+      aes(y = after_stat(count / tapply(count, group, sum)[group])),
+      bins = bins,
+      color = "white",
+      boundary = 0,
+      position = "identity",
+      alpha = 0.5
+    ) +
+    theme_classic() +
+    scale_x_continuous(
+      limits = x_limits,
+      breaks = seq(x_limits[1], x_limits[2], by = 0.1),
+      expand = c(0.01, 0)
+    ) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(
+      title = title,
+      subtitle = subtitle,
+      x = x_label,
+      y = "Proportion of Loci within Group",
+      fill = color_by
+    ) +
+    theme(
+      plot.title = element_text(face = "bold", size = 14),
+      axis.title = element_text(size = 12),
+      legend.position = "right"
+    )
+  
+  return(p)
+}
+```
+
+# JC & JA in whole vcf
+```{r}
+vcf <- read.vcfR(with_hybrids_vcf)
+gl_raw <- vcfR2genlight(vcf)
+patterns <- list(JC = "_JC", JA = "_JA")
+raw_afs <- extract_afs_data(gl_raw, patterns, dataset_label = "Hybrids_Dataset")
+
+pure_plot <- plot_afs(
+  afs_data = raw_afs,
+  fold = TRUE,
+  color_by = "Group",
+  title = "Site Frequency Spectrum",
+  subtitle = "From hybrid dataset of 8927 loci and bins by 40",
+  filter_fixed = TRUE
+)
+print(pure_plot)
+```
+
+
+# JC & JA in sim vcf (should be the same)
+```{r}
+library(stringr)
+
+vcf_wild <- read.vcfR(with_hybrids_vcf)
+gl_raw_wild <- vcfR2genlight(vcf_wild)
+
+vcf_sim <- read.vcfR(sim_hybrids_vcf)
+gl_raw_sim <- vcfR2genlight(vcf_sim)
+patterns <- list(JC = "_JC", JA = "_JA")
+raw_afs <- extract_afs_data(gl_raw, patterns, dataset_label = "Hybrids_Dataset")
+
+pure_plot <- plot_afs(
+  afs_data = raw_afs,
+  fold = TRUE,
+  color_by = "Group",
+  title = "Site Frequency Spectrum",
+  subtitle = "From hybrid dataset of 8927 loci and bins by 40",
+  filter_fixed = TRUE
+)
+print(pure_plot)
+
+# Verifying the have the same
+parents_sim <- tibble(IND = gl_raw_sim@ind.names)
+parents_sim <- parents_sim %>% 
+  filter(str_detect(IND, "_JC|_JA"))
+
+parents_wild<- tibble(IND = gl_raw_wild@ind.names)
+parents_wild <- parents_wild %>% 
+  filter(str_detect(IND, "_JC|_JA"))
+
+overlapping_ids <- intersect(parents_sim$IND, parents_wild$IND)
+print(overlapping_ids)
+
+```
+
+
+# F1 sim and F1 hybrid
+```{r}
+vcf_wild <- read.vcfR(with_hybrids_vcf)
+vcf_sim <- read.vcfR(sim_hybrids_vcf)
+
+gl_raw_wild <- vcfR2genlight(vcf_wild)
+gl_raw_sim <- vcfR2genlight(vcf_sim)
+
+wild_afs <- extract_afs_data(gl_raw_wild, list(F1_wild = "_F1"), dataset_label = "Hybrids_Dataset")
+sim_afs <- extract_afs_data(gl_raw_sim, list(F1_sim = "F1HYB_"), dataset_label = "Hybrids_Dataset")
+
+all_afs <- rows_append(wild_afs, sim_afs)
+# all_afs <- all_afs %>% filter(AF != 0.5)
+
+plot <- plot_afs(
+  afs_data = all_afs,
+  fold = TRUE,
+  color_by = "Group",
+  title = "Site Frequency Spectrum",
+  subtitle = "From hybrid dataset of 8927 loci and bins by 40",
+  filter_fixed = TRUE
+)
+print(plot)
+```
+
+# bc sim and bc hybrid
+```{r}
+vcf_wild <- read.vcfR(with_hybrids_vcf)
+vcf_sim <- read.vcfR(sim_hybrids_vcf)
+
+gl_raw_wild <- vcfR2genlight(vcf_wild)
+gl_raw_sim <- vcfR2genlight(vcf_sim)
+
+wild_afs <- extract_afs_data(gl_raw_wild, list(BC_wild = "_BC"), dataset_label = "Hybrids_Dataset")
+sim_afs <- extract_afs_data(gl_raw_sim, list(BC1_sim = "BC2HYB_"), dataset_label = "Hybrids_Dataset")
+
+all_afs <- rows_append(wild_afs, sim_afs)
+
+plot <- plot_afs(
+  afs_data = all_afs,
+  fold = TRUE,
+  color_by = "Group",
+  title = "Site Frequency Spectrum",
+  subtitle = "From hybrid dataset of 8927 loci and bins by 40",
+  filter_fixed = TRUE
+)
+print(plot)
+```
+
+
+# all
+```{r}
+vcf_wild <- read.vcfR(with_hybrids_vcf)
+vcf_sim <- read.vcfR(sim_hybrids_vcf)
+
+gl_raw_wild <- vcfR2genlight(vcf_wild)
+gl_raw_sim <- vcfR2genlight(vcf_sim)
+
+wild_afs <- extract_afs_data(gl_raw_wild, list(JA = "_JA", JC = "_JC", F1_wild = "_F1"), dataset_label = "Hybrids_Dataset")
+sim_afs <- extract_afs_data(gl_raw_sim, list(F1_sim = "F1HYB_"), dataset_label = "Hybrids_Dataset")
+
+all_afs <- rows_append(wild_afs, sim_afs)
+
+plot <- plot_afs(
+  afs_data = all_afs,
+  fold = TRUE,
+  color_by = "Group",
+  title = "Site Frequency Spectrum",
+  subtitle = "From hybrid dataset of 8927 loci and bins by 40",
+  filter_fixed = TRUE
+)
+print(plot)
+```

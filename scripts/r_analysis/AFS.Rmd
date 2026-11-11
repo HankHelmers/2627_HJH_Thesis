@@ -67,21 +67,29 @@ af_jc <- adegenet::glMean(jc_genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af_jc)
-
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 # Create the plot
-plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
-  theme_classic() + # Cleans up background gridlines
+plot <- ggplot(sfs_data, aes(x = MAF)) + 
+  geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "steelblue", 
+    color = "white", 
+    boundary = 0
+  ) + 
+    theme_classic() + # Cleans up background gridlines
+    scale_x_continuous(
+    limits = c(0.01, 0.5), 
+    breaks = seq(0.01, 0.5, by = 0.1), 
+    expand = c(0.01, 0)
+  ) + 
+  theme_classic() + 
   labs(
     title = "JC Site Frequency Spectrum (SFS)",
     subtitle = "bins by 40; 66,834 loci",
     x = "Allele Frequency",
-    y = "Locus Count"
-  ) + scale_x_continuous(
-    limits = c(0, 1),
-    breaks = seq(0, 1, by = 0.1),
-    expand = c(0.05, 0)
-  ) +
+    y = "Proportion of Loci"                 # Updated axis label
+  ) + 
   theme(
     plot.title = element_text(face = "bold", size = 14),
     axis.title = element_text(size = 12)
@@ -100,6 +108,18 @@ ggsave(
 ## JA
 ```{r}
 # Find indices of individuals with '_JC' in their names
+jc_indices <- grep("_JC", adegenet::indNames(my_genlight))
+
+# Subset the genlight object
+jc_genlight <- my_genlight[jc_indices, ]
+
+# Compute allele frequency for the subsetted JC individuals
+af_jc <- adegenet::glMean(jc_genlight)
+
+# Convert the numeric vector to a data frame for ggplot
+sfs_data <- data.frame(AF = af_jc) %>% mutate(Species = "JC")
+
+# Find indices of individuals with '_JC' in their names
 ja_indices <- grep("_JA", adegenet::indNames(my_genlight))
 
 # Subset the genlight object
@@ -109,27 +129,43 @@ ja_genlight <- my_genlight[ja_indices, ]
 af_ja <- adegenet::glMean(ja_genlight)
 
 # Convert the numeric vector to a data frame for ggplot
-sfs_data <- data.frame(AF = af_ja)
+sfs_data_ja <- data.frame(AF = af_ja) %>% mutate(Species = "JA")
+sfs_data <- sfs_data %>% rows_append(sfs_data_ja)
 
-# Create the plot
-plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "orange", color = "white", boundary = 0) +
-  theme_classic() + # Cleans up background gridlines
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
+
+plot <- ggplot(sfs_data, aes(x = MAF, fill = Species)) + 
+  geom_histogram(
+    # Correctly calculates proportions within each individual species group
+    aes(y = after_stat(count / tapply(count, group, sum)[group])), 
+    bins = 40, 
+    color = "white", 
+    boundary = 0,
+    position = "identity", 
+    alpha = 0.5            
+  ) + 
+  theme_classic() + 
   labs(
-    title = "JA Site Frequency Spectrum (SFS)",
-    subtitle = "bins by 40; 66,834 loci",
-    x = "Allele Frequency",
-    y = "Locus Count"
-  ) + scale_x_continuous(
-    limits = c(0, 1),
-    breaks = seq(0, 1, by = 0.1),
-    expand = c(0.05, 0)
+    title = "Folded Site Frequency Spectrum (SFS)", 
+    subtitle = "bins by 40; 66,834 loci", 
+    x = "Minor Allele Frequency (MAF)", 
+    y = "Proportion of Loci within Species",
+    fill = "Species"
+  ) + 
+  scale_x_continuous(
+    limits = c(0, 0.5), 
+    breaks = seq(0, 0.5, by = 0.1), 
+    expand = c(0.01, 0)
+  ) + 
+  scale_y_continuous(
+    expand = c(0, 0)
   ) +
   theme(
-    plot.title = element_text(face = "bold", size = 14),
-    axis.title = element_text(size = 12)
+    plot.title = element_text(face = "bold", size = 14), 
+    axis.title = element_text(size = 12),
+    legend.position = "right"
   )
-plot 
+plot
 
 ggsave(
   filename = file.path(photo_path, "ja_afs_all_loci.png"), 
@@ -191,13 +227,22 @@ hist_data <- hist_data %>%
     AF = (breaks[Bin] + breaks[Bin + 1]) / 2
   )
 
-main_plot <- ggplot(
-  hist_data,
-  aes(x = AF, y = Count, fill = Individual)
-) +
+folded_hist_data <- hist_data %>%
+  mutate(
+    AF = (breaks[Bin] + breaks[Bin + 1]) / 2,
+    MAF = ifelse(AF > 0.5, 1 - AF, AF)
+  ) %>%
+  # Group by the folded MAF and Individual to sum their locus counts/proportions
+  group_by(MAF, Individual) %>%
+  summarise(Count = sum(`Count`), .groups = "drop") %>% # Use your actual column name if different
+  # Calculate relative proportions across the entire folded spectrum
+  mutate(Proportion = Count / sum(Count))
+
+main_plot <- ggplot(folded_hist_data, aes(x = MAF, y = Proportion, fill = Individual)) + 
   geom_col(
-    width = 1 / 40,
-    position = "stack"
+    width = 1/40,
+    position = "stack",
+    color = "white" # Clean border between stacked segments
   ) +
   theme_classic() +
   labs(
@@ -348,10 +393,17 @@ af_jc <- adegenet::glMean(jc_genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af_jc)
+#sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 
 # Create the plot
 plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "steelblue", 
+    color = "white", 
+    boundary = 0
+  ) + 
   theme_classic() + # Cleans up background gridlines
   labs(
     title = "JC Site Frequency Spectrum (SFS)",
@@ -387,10 +439,17 @@ af_ja <- adegenet::glMean(ja_genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data_ja <- data.frame(AF = af_ja)
+sfs_data_ja$MAF <- ifelse(sfs_data_ja$AF > 0.5, 1 - sfs_data_ja$AF, sfs_data_ja$AF)
 
 # Create the plot
-plot <- ggplot(sfs_data_ja, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "orange", color = "white", boundary = 0) +
+plot <- ggplot(sfs_data_ja, aes(x = MAF)) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "orange", 
+    color = "white", 
+    boundary = 0
+  ) + 
   theme_classic() + # Cleans up background gridlines
   labs(
     title = "JA Site Frequency Spectrum (SFS)",
@@ -426,10 +485,18 @@ af <- adegenet::glMean(genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af)
+#sfs_data <- sfs_data %>% filter(AF != 0) %>% filter(AF != 1)
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 
 # Create the plot
 plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "lightblue", 
+    color = "white", 
+    boundary = 0
+  ) + 
   theme_classic() + # Cleans up background gridlines
   labs(
     title = "F1 Site Frequency Spectrum (SFS)",
@@ -493,7 +560,8 @@ ggsave(
 
 # Simulated 
 ```{r}
-sim_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/generated_input/experiment_9/boot1/vcf/with_hybrids.vcf.gz"
+sim_hybrids_vcf <- "/work/williarj/williarj/2627_HJH_Thesis/data/generated_input/experiment_13/boot1/vcf/with_hybrids.vcf.gz"
+boot <- 1
 vcf_sim <- read.vcfR(sim_hybrids_vcf)
 genlight_sim <- vcfR2genlight(vcf_sim)
 ```
@@ -513,18 +581,31 @@ vcf_parent <- read.vcfR(no_hybrids_vcf)
 indices <- grep("_JC", adegenet::indNames(genlight_sim))
 
 # Subset the genlight object
-genlight <- my_genlight[indices, ]
+genlight <- genlight_sim[indices, ]
 
 # Compute allele frequency for the subsetted JC individuals
 af <- adegenet::glMean(genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af)
+sfs_data <- sfs_data %>% filter(AF != 0) # %>% filter(AF != 1)
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 
 # Create the plot
-plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+plot <- ggplot(sfs_data, aes(x = MAF)) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "steelblue", 
+    color = "white", 
+    boundary = 0
+  ) + 
   theme_classic() + # Cleans up background gridlines
+    scale_x_continuous(
+    limits = c(0.00, 0.5), 
+    breaks = seq(0.00, 0.5, by = 0.1), 
+    expand = c(0.01, 0)
+  ) + 
   labs(
     title = "JC parents to simulations: Site Frequency Spectrum (SFS)",
     subtitle = "Individuals; bins by 40; 5000 loci",
@@ -538,7 +619,7 @@ plot <- ggplot(sfs_data, aes(x = AF)) +
 plot 
 
 ggsave(
-  filename = file.path(photo_path, "sim_JC_parents_afs_loci.png"), 
+  filename = file.path(photo_path, paste0("sim_JC_boot", boot,"_parents_afs_loci.png")), 
   plot = plot,
     width = 10,
   height = 6,
@@ -556,17 +637,31 @@ ggsave(
 indices <- grep("_JA", adegenet::indNames(genlight_sim))
 
 # Subset the genlight object
-genlight <- my_genlight[indices, ]
+genlight <- genlight_sim[indices, ]
 
 # Compute allele frequency for the subsetted JC individuals
 af <- adegenet::glMean(genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af)
+sfs_data <- sfs_data %>% filter(AF != 1) # %>% filter(AF != 0)
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 
 # Create the plot
-plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+plot <- ggplot(sfs_data, aes(x = MAF)) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "orange", 
+    color = "white", 
+    boundary = 0
+  ) + 
+    theme_classic() + # Cleans up background gridlines
+    scale_x_continuous(
+    limits = c(0.00, 0.5), 
+    breaks = seq(0.00, 0.5, by = 0.1), 
+    expand = c(0.01, 0)
+  ) + 
   theme_classic() + # Cleans up background gridlines
   labs(
     title = "Parent JAs in simulations: Site Frequency Spectrum (SFS)",
@@ -581,7 +676,7 @@ plot <- ggplot(sfs_data, aes(x = AF)) +
 plot 
 
 ggsave(
-  filename = file.path(photo_path, "sim_JA_parents_afs_loci.png"), 
+  filename = file.path(photo_path, paste0("sim_JA_boot", boot, "_parents_afs_loci.png")), 
   plot = plot,
     width = 10,
   height = 6,
@@ -595,17 +690,31 @@ ggsave(
 indices <- grep("F1HYB_", adegenet::indNames(genlight_sim))
 
 # Subset the genlight object
-genlight <- my_genlight[indices, ]
+genlight <- genlight_sim[indices, ]
 
 # Compute allele frequency for the subsetted JC individuals
 af <- adegenet::glMean(genlight)
 
 # Convert the numeric vector to a data frame for ggplot
 sfs_data <- data.frame(AF = af)
+sfs_data <- sfs_data %>% filter(AF != 0) %>% filter(AF != 1)
+sfs_data$MAF <- ifelse(sfs_data$AF > 0.5, 1 - sfs_data$AF, sfs_data$AF)
 
 # Create the plot
-plot <- ggplot(sfs_data, aes(x = AF)) +
-  geom_histogram(bins = 40, fill = "steelblue", color = "white", boundary = 0) +
+plot <- ggplot(sfs_data, aes(x = MAF)) +
+    geom_histogram(
+    aes(y = after_stat(count / sum(count))), # Converts y-axis to proportions
+    bins = 40, 
+    fill = "lightblue", 
+    color = "white", 
+    boundary = 0
+  ) + 
+    theme_classic() + # Cleans up background gridlines
+    scale_x_continuous(
+    limits = c(0.00, 0.5), 
+    breaks = seq(0.00, 0.5, by = 0.1), 
+    expand = c(0.00, 0)
+  ) + 
   theme_classic() + # Cleans up background gridlines
   labs(
     title = "Simulated F1 Site Frequency Spectrum (SFS)",
@@ -620,7 +729,7 @@ plot <- ggplot(sfs_data, aes(x = AF)) +
 plot 
 
 ggsave(
-  filename = file.path(photo_path, "sim_f1_afs_loci.png"), 
+  filename = file.path(photo_path, paste0("sim_F1s_boot", boot, "_afs_loci.png")), 
   plot = plot,
     width = 10,
   height = 6,

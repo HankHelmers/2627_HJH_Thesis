@@ -18,12 +18,17 @@ library(tidyverse)
 library(stringr)
 
 base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+pures_dataset <- "data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf"
 
 # Test directory 
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
 
 # Load your 66,000 loci VCF
-vcf <- read.vcfR((paste0(base_dir, "data/raw_input/Ebrahimi_3_3_2026_prepared/renamed_pure_jc_ja.vcf")))
+vcf <- read.vcfR((paste0(base_dir, pures_dataset)))
+
+all_loci <- tibble(CHROM = vcf@fix[,1], POS = vcf@fix[,2], ID = vcf@fix[,3])
+output_csv_path <- file.path(paste0(base_dir, "data/outputs/all_loci.csv"))
+write.csv(all_loci, output_csv_path, row.names = FALSE)
 
 # Load population assignments (Must match VCF sample IDs)
 # Columns required: SampleID, Population
@@ -42,7 +47,9 @@ pegas_loci <- vcfR2loci(vcf)
 # Assign populations directly to the loci object or pass as a vector
 # pegas::Fst expects either a 'population' column or a population factor vector
 fst_matrix <- Fst(pegas_loci, pop = as.factor(pop_vector))
-
+```
+# Save output in CSV
+```{r}
 # pegas returns a matrix with columns: FIT, FST, FIS for each locus
 # Extract per-locus FST values into a clean tibble
 fst_df <- tibble(
@@ -53,6 +60,9 @@ fst_df <- tibble(
   # Replace negative WC estimates with 0 for biological interpretation
   mutate(FST_clean = ifelse(FST < 0, 0, FST))
 
+# Save CSV output
+output_csv_path <- file.path(paste0(base_dir, "data/outputs/summary_fst_at_loci_in_all_loci.csv"))
+write.csv(fst_df, output_csv_path, row.names = FALSE)
 ```
 
 # Stats 

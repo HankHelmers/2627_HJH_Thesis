@@ -11,8 +11,10 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(knitr)
 library(tidyverse)
 library(stringr)
+library(patchwork)
 
 base_dir <- "/work/williarj/williarj/2627_HJH_Thesis/"
+figure_folder <- paste0(base_dir, "scripts/r_analysis/Figures/")
 
 # Test directory 
 list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
@@ -107,7 +109,7 @@ data <- data %>%
     experiment_ID = factor(
       experiment_ID,
       levels = c(7, 8, 9),
-      labels = c("500_loci", "1000_loci", "5000_loci")
+      labels = c("Random 500 loci", "Random 1000 loci", "Random 5000 loci")
     )
   )
 data <- data %>%
@@ -138,32 +140,296 @@ write.csv(summary_data, file = output_csv_path, row.names = FALSE)
 
 # Density plots
 
+## Formating
 ```{r}
-data_zoom_in <- data %>% filter(JC > 0.75) %>% filter(experiment_ID == "5000_loci")
-data_zoom_in <- data_zoom_in %>% filter(hybrid_status %in%  c("JA", "F1", "BC1HYB", "BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "BC6HYB", "JC"))
+hybrid_colors <- c(
+  "JA" = "#ADD8E6",
+  "F1" = "#87CEEB",
+  "BC1HYB" = "#6495ED",
+  "BC2HYB" = "#4169E1",
+  "BC3HYB" = "#3155B5",
+  "BC4HYB" = "#244494",
+  "BC5HYB" = "#193575",
+  "BC6HYB" = "#102653",
+  "JC" = "#00008B"
+)
 
-q_density_plot <- ggplot(data_zoom_in, 
+# hybrid_colors <- c(
+#   "JA" = "#808080",
+#   "F1" = "#F8766D",
+#   "BC1HYB" = "#C49A00",
+#   "BC2HYB" = "#53B400",
+#   "BC3HYB" = "#00C094",
+#   "BC4HYB" = "#00B6EB",
+#   "BC5HYB" = "#A58AFF",
+#   "BC6HYB" = "#FB61D7",
+#   "JC" = "#404040"
+# )
+
+hybrid_levels <- names(hybrid_colors)
+```
+
+## All data
+```{r}
+#data_zoom_in <- data %>% filter(JC > 0.75) %>% filter(experiment_ID == "5000_loci")
+data_zoom_in <- data %>% filter(hybrid_status %in%  c("JA", "F1", "BC1HYB", "BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "BC6HYB", "JC"))
+
+q_density_plot_all <- ggplot(data_zoom_in, 
                          aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
   geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
   facet_wrap(~ experiment_ID, ncol = 3) +
-  #scale_x_continuous(limits = c(0.75, 1), breaks = seq(0.75, 1, by = 0.05)) +
+
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2)) + 
+  
   labs(
-    title = "Density Distribution of Q-values Across Experiments",
-    x = "Q-value (1 = JC, 0 = JA)",
-    y = "Density",
-    fill = "Hybrid_status",
-    color = "Hybrid_status"
+    #title = "Density Distribution of Q-values Across Experiments",
+    x = "Ancestry, Q (1 = JC, 0 = JA)",
+    y = "Normalized Density",
+
   ) +
+  
+  # Designated colors 
+  scale_fill_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  scale_color_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  
   theme_minimal(base_size = 14) +
   theme(
-    plot.title = element_text(face = "bold", hjust = 0.5),
+        aspect.ratio = 0.6, 
+   axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      margin = margin(t = 0.5),
+      size = 10
+    ),
+
+    axis.title.x = element_text(
+      margin = margin(t = 5)
+    ),
+    
     strip.text = element_text(face = "bold"),
+    
     legend.position = "right",
         panel.grid.minor = element_blank(),
     panel.grid.major = element_blank()
   )
 
-print(q_density_plot)
+print(q_density_plot_all)
+
+ggsave(paste0(figure_folder, "random_loci_densities_all.png"), plot = q_density_plot_all, width = 12, height = 6, dpi = 300)
 
 ```
 
+## Zoom to F1s
+
+```{r}
+#data_zoom_in <- data %>% filter(JC > 0.40) # %>% filter(experiment_ID == "5000_loci")
+data_zoom_in <- data %>% filter(hybrid_status %in%  c("F1", "BC1HYB", "BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "BC6HYB", "JC"))
+
+q_density_plot_zoom_f1 <- ggplot(data_zoom_in, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
+  facet_wrap(~ experiment_ID, ncol = 3) +
+  #scale_x_continuous(limits = c(0.75, 1), breaks = seq(0.75, 1, by = 0.05)) +
+  scale_x_continuous(limits = c(0.45, 1), breaks = seq(0, 1, by = 0.05)) + 
+  
+  labs(
+    #title = "Density Distribution of Q-values Across Experiments",
+    x = "Ancestry, Q (1 = JC, 0 = JA)",
+    y = "Normalized Density"
+  ) +
+  
+  # Designated colors 
+  scale_fill_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  scale_color_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    aspect.ratio = 0.6, 
+    axis.text.x = element_text(angle = 45, hjust = 1, margin = margin(t = -8), size = 10),
+    axis.title.x = element_text(margin = margin(t = 5)),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+print(q_density_plot_zoom_f1)
+
+ggsave(paste0(figure_folder, "random_loci_densities_zoom_to_f1.png"), plot = q_density_plot_zoom_f1, width = 7, height = 4, dpi = 300)
+
+```
+
+## Zoom to BCs
+
+```{r}
+#data_zoom_in <- data %>% filter(JC > 0.40) # %>% filter(experiment_ID == "5000_loci")
+data_zoom_in <- data %>% filter(hybrid_status %in%  c("BC2HYB", "BC3HYB", "BC4HYB", "BC5HYB", "BC6HYB", "JC"))
+
+q_density_plot_zoom_bc2 <- ggplot(data_zoom_in, 
+                         aes(x = JC, fill = hybrid_status, color = hybrid_status)) +
+  geom_density(aes(y = after_stat(ndensity)), alpha = 0.35, linewidth = 0.7) +
+  facet_wrap(~ experiment_ID, ncol = 3) +
+  scale_x_continuous(limits = c(0.75, 1), breaks = seq(0, 1, by = 0.02)) + 
+  
+  labs(
+    #title = "Zoomed into BC2s",
+    x = "Ancestry, Q (1 = JC, 0 = JA)",
+    y = "Normalized Density",
+  ) +
+  
+  # Designated colors 
+  scale_fill_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  scale_color_manual(
+    values = hybrid_colors,
+    limits = hybrid_levels,
+    drop = FALSE
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+      aspect.ratio = 0.6, 
+   axis.text.x = element_text(
+      angle = 45,
+      hjust = 1,
+      margin = margin(t = -8),
+      size = 10
+    ),
+
+    axis.title.x = element_text(
+      margin = margin(t = 5)
+    ),
+    
+    strip.text = element_text(face = "bold"),
+    
+    legend.position = "right",
+        panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+print(q_density_plot_zoom_bc2)
+
+ggsave(paste0(figure_folder, "random_loci_densities_zoom_to_bc2.png"), plot = q_density_plot_zoom_bc2, width = 12, height = 6, dpi = 300)
+```
+
+# Combined
+
+## Version 1
+```{r}
+q_density_combined <- 
+  (q_density_plot_all +
+     theme(
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+     )) /
+  (q_density_plot_zoom_f1 +
+     theme(
+        axis.title.x = element_blank(),
+        legend.position = "none"
+     )) / 
+  (q_density_plot_zoom_bc2 +
+     theme(
+       axis.title.y = element_blank(),
+       legend.position = "none"
+     )) + 
+  plot_layout(
+    ncol = 1,
+    heights = c(1, 1, 1),
+    guides = "collect"
+  ) &
+  theme(
+    legend.position = "right",
+    legend.title = element_text(face = "bold")
+  )
+
+q_density_combined
+```
+
+## Version 2
+
+```{r}
+library(cowplot)
+library(grid)
+
+p1 <- q_density_plot_all + theme(
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank())
+
+p2 <- q_density_plot_zoom_f1 + theme(
+  axis.title.x = element_blank(),
+  strip.text = element_blank(), # removes the 500, 1000, 5000 labels from other rows
+  legend.position = "none") # removes the repeat color legends 
+
+p3 <- q_density_plot_zoom_bc2 + theme(
+  axis.title.y = element_blank(), 
+  strip.text = element_blank(), # removes the 500, 1000, 5000 labels from other rows
+  legend.position = "none")
+
+q_density_combined <- ( (p1 / p2 / p3) ) + 
+  plot_layout(
+    ncol = 1, 
+    widths = c(1, 1, 1, 1),       
+    guides = "collect"      
+  ) & 
+  theme_classic(base_size = 12) &
+  plot_annotation(
+    theme = theme(
+    # Axis text
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 20, face = "bold"),
+
+    # Facet labels (500, 1000, 5000)
+    strip.text = element_text(size = 24, face = "bold"),
+
+    # Legend
+    legend.position = "right",
+    legend.text = element_text(size = 11),
+    legend.title = element_text(size = 12, face = "bold"),
+
+    # Axis ticks
+    axis.ticks = element_line(linewidth = 0.5)
+  ))
+
+q_density_combined
+
+ggsave(paste0(figure_folder, "random_loci_densities_combined.png"), plot = q_density_combined, width = 18, height = 12, dpi = 300)
+
+# q_density_combined <- ggdraw(q_density_combined) +
+#   # F1 zoom connectors
+#   draw_line(
+#     x = c(0.35, 0.35),
+#     y = c(0.68, 0.65),
+#     color = "grey40",
+#     linetype = "dashed",
+#     linewidth = 1
+#   ) +
+# 
+#   draw_line(
+#     x = c(0.55, 0.55),
+#     y = c(0.68, 0.65),
+#     color = "grey40",
+#     linetype = "dashed",
+#     linewidth = 1
+#   )
+# q_density_combined
+
+```

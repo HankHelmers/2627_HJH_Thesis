@@ -17,9 +17,6 @@ exp_output_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_26_
 str_results_folder <- "/work/williarj/williarj/2627_HJH_Thesis/experiments/10_26_26_k2_k3_hybrids_dataset"
 original_structure_input_file <-"/work/williarj/williarj/2627_HJH_Thesis/data/raw_input/Ebrahimi_5_20_2026_prepared/prepared_with_hybrids.str"
 
-figure_output_path <- "/work/williarj/williarj/2627_HJH_Thesis/scripts/r_analysis/Figures"
-figure_name <- "with_wild_hybrids"
-
 # Working directory is the folder running the script from:
 print(getwd())
 
@@ -27,66 +24,58 @@ print(getwd())
 sfiles <- list.files(str_results_folder, full.names = TRUE)
 run_files <- sfiles[grepl("_f$", basename(sfiles))] # get only run files
 print(run_files)
+
 ```
 
-# K=2
+# Standardized function
+
 ```{r}
-# Read the runs and automatically extract the individual labels
-q_list <- readQ(files = run_files[1], filetype="structure", indlabfromfile = TRUE)
-slist <- as.qlist(q_list)                                        
-slist <- alignK(slist)  
-
-# Summarize basic information in the structure files
-table <- tabulateQ(slist, sorttable = TRUE, writetable = FALSE, exportpath = NULL)
-summary <- summariseQ(table)
-print(summary)
-
-number_of_runs=length(slist)
-
-# Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples 
-plotQ(
-  qlist = slist[1],
-  sortind = "all",
-  sharedindlab = FALSE,
-  exportpath = figure_output_path, 
-  outputfilename = paste0("k2_",figure_name),
+graph_run <- function(run_file_index, output_file_name) {
+  # Read the runs and automatically extract the individual labels
+  q_list <- readQ(files = run_files[run_file_index], filetype="structure", indlabfromfile = TRUE)
+  slist <- as.qlist(q_list)                                        
+  slist <- alignK(slist)  
   
-  # --- Add these arguments to show individual names ---
-  showindlab = TRUE,       # Enables display of individual labels
-  useindlab = TRUE,        # Uses labels from the dataframe rownames (extracted from file)
-  width = 30,              # Expands width so names have room (adjust based on sample size)
-  basesize = 3            # Increases font size slightly for readability
-)
+  # Summarize basic information in the structure files
+  table <- tabulateQ(slist, sorttable = TRUE, writetable = FALSE, exportpath = NULL)
+  summary <- summariseQ(table)
+  print(summary)
+  
+  number_of_runs=length(slist)
+  
+  # Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples 
+  plotQ(
+    qlist = slist[1],
+    sortind = "all",
+    sharedindlab = FALSE,
+    exportpath = figure_output_path, 
+    outputfilename = output_file_name,
+    
+    # --- Add these arguments to show individual names ---
+    showindlab = TRUE,       # Enables display of individual labels
+    useindlab = TRUE,        # Uses labels from the dataframe rownames (extracted from file)
+    width = 30,              # Expands width so names have room (adjust based on sample size)
+    basesize = 3            # Increases font size slightly for readability
+  )
+}
 ```
 
-# k=3
-
+# Figure generation
 ```{r}
-# Read the runs and automatically extract the individual labels
-q_list <- readQ(files = run_files[2], filetype="structure", indlabfromfile = TRUE)
-slist <- as.qlist(q_list)                                        
-slist <- alignK(slist)  
+# k2_f - 1
+# k2_small_f - 2, small referring to the STRUCTURE parameter size
+# k3_f - 3
+# k3_small_f - 4
 
-# Summarize basic information in the structure files
-table <- tabulateQ(slist, sorttable = TRUE, writetable = FALSE, exportpath = NULL)
-summary <- summariseQ(table)
-print(summary)
+figure_output_path <- "/work/williarj/williarj/2627_HJH_Thesis/scripts/r_analysis/Figures"
 
-number_of_runs=length(slist)
+hybrid_figure_name <- "_with_wild_hybrids"
+# Small parameter size
+graph_run(2, paste0("k2_small",hybrid_figure_name))
+graph_run(4, paste0("k3_small",hybrid_figure_name))
 
-# Reference for plots:https://www.royfrancis.com/pophelper/reference/plotQ.html#examples 
-plotQ(
-  qlist = slist[1],
-  sortind = "all",
-  sharedindlab = FALSE,
-  exportpath = figure_output_path, 
-  outputfilename = paste0("k3_",figure_name),
-  
-  # --- Add these arguments to show individual names ---
-  showindlab = TRUE,       # Enables display of individual labels
-  useindlab = TRUE,        # Uses labels from the dataframe rownames (extracted from file)
-  width = 30,              # Expands width so names have room (adjust based on sample size)
-  basesize = 3            # Increases font size slightly for readability
-)
+# Large parameter size
+graph_run(1, paste0("k2_large",hybrid_figure_name))
+graph_run(3, paste0("k3_large",hybrid_figure_name))
 
 ```

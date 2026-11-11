@@ -15,7 +15,6 @@ home_dir <- "../../data/Ebrahimi_5_20_2026_download/"
 out_dir <- "../../data/Ebrahimi_5_20_2026_prepared/"
 input_vcf <- paste0(home_dir, "minivcf_v2.vcf.gz")
 
-
 # 1. Read the CSV containing sample IDs and groups
 metadata <- read_csv(paste0(home_dir, "sample_info.csv"))
 
